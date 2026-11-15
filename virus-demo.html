@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CODE TRANSITION // DEMO</title>
+<style>
+:root{ --grn:#39ff14; --grn2:#00ff9c; --red:#ff2e4d; --cyan:#36e6ff; --bg:#06080a; }
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;scroll-snap-type:y mandatory;}
+body{background:var(--bg);color:var(--grn);font-family:"Courier New",ui-monospace,monospace;overflow-x:hidden;}
+section{min-height:100vh;scroll-snap-align:start;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:40px;text-align:center;position:relative;}
+.s-tag{font-size:12px;letter-spacing:6px;color:var(--grn2);opacity:.7;}
+.s-title{font-size:clamp(30px,7vw,72px);margin:16px 0;letter-spacing:3px;text-shadow:0 0 18px rgba(57,255,20,.5);}
+.s-sub{color:var(--cyan);opacity:.85;max-width:640px;line-height:1.8;font-size:14px;}
+.hint{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);font-size:12px;color:var(--grn2);opacity:.55;z-index:5;letter-spacing:1px;}
+
+/* ---------- 代码翻页过渡层（无抖动 / 无代码雨） ---------- */
+.vscan{position:fixed;inset:0;z-index:50;pointer-events:none;opacity:0;background:rgba(6,8,10,.96);transition:opacity .12s;overflow:hidden;}
+.vscan.on{opacity:1;}
+.vscan .scanlines{position:absolute;inset:0;opacity:.5;background:repeating-linear-gradient(0deg, rgba(57,255,20,.05) 0, rgba(57,255,20,.05) 1px, transparent 1px, transparent 3px);}
+.vscan .rgb{position:absolute;inset:0;mix-blend-mode:screen;background:linear-gradient(90deg, rgba(255,0,80,.10), transparent 45%, transparent 55%, rgba(0,200,255,.10));}
+.vscan .term{position:absolute;left:6%;top:14%;font-size:14px;line-height:1.9;color:var(--grn);text-shadow:0 0 8px rgba(57,255,20,.6);white-space:pre-wrap;max-width:88%;}
+.vscan .cur{display:inline-block;color:var(--grn);animation:blink 1s steps(1) infinite;}
+@keyframes blink{0%,50%{opacity:1}51%,100%{opacity:0}}
+.vscan .warn{position:absolute;right:6%;bottom:15%;color:var(--red);text-align:right;font-size:13px;line-height:1.9;text-shadow:0 0 10px rgba(255,46,77,.6);max-width:42%;}
+.vscan .bar{position:absolute;left:6%;right:6%;bottom:8%;height:7px;border:1px solid var(--grn);box-shadow:0 0 10px rgba(57,255,20,.4);}
+.vscan .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--grn2),var(--grn));box-shadow:0 0 12px var(--grn);}
+.vscan .pct{position:absolute;right:6%;bottom:calc(8% + 14px);color:var(--grn2);font-size:12px;letter-spacing:2px;}
+
+/* ---------- 收尾“卡机”故障衔接（仅遮罩消失瞬间，无抖动/无位移） ---------- */
+.boot-fx{position:fixed;inset:0;z-index:48;pointer-events:none;opacity:0;
+  background:
+    repeating-linear-gradient(0deg, transparent 0, transparent 5px, rgba(57,255,20,.05) 5px, rgba(57,255,20,.05) 6px),
+    repeating-linear-gradient(90deg, rgba(255,0,80,.06) 0, rgba(255,0,80,.06) 2px, transparent 2px, transparent 9px),
+    linear-gradient(90deg, rgba(255,0,80,.12), transparent 45%, transparent 55%, rgba(0,200,255,.12));
+}
+body.glitch-boot .boot-fx{opacity:1;animation:bootFreezeFx .6s steps(3,end) 1;}
+@keyframes bootFreezeFx{ 0%{opacity:.9;} 50%{opacity:.5;} 100%{opacity:0;} }
+body.glitch-boot main{animation:bootFreeze .6s steps(3,end) 1;}
+@keyframes bootFreeze{
+  0%{filter:invert(1) hue-rotate(40deg) contrast(1.5);}
+  34%{filter:invert(1) hue-rotate(40deg) contrast(1.5);}
+  67%{filter:hue-rotate(18deg) contrast(1.15);}
+  100%{filter:none;}
+}
+
+/* ---------- 右侧翻页指示 ---------- */
+.pager{position:fixed;right:20px;top:50%;transform:translateY(-50%);z-index:45;display:flex;flex-direction:column;gap:14px;}
+.pager button{width:2px;height:18px;background:rgba(57,255,20,.28);border:0;cursor:pointer;transition:all .2s;}
+.pager button.act{background:var(--grn);box-shadow:0 0 8px var(--grn);height:28px;}
+</style>
+</head>
+<body>
+<div class="vscan" id="vscan" aria-hidden="true">
+  <div class="scanlines"></div>
+  <div class="rgb"></div>
+  <div class="term"><span id="termText"></span><span class="cur">&#9608;</span></div>
+  <div class="warn" id="warn"></div>
+  <div class="bar"><i id="vbar"></i></div>
+  <div class="pct" id="vp">0%</div>
+</div>
+
+<div class="boot-fx" id="bootFx" aria-hidden="true"></div>
+
+<main>
+  <section id="s0"><div class="s-tag">// SECTOR 00</div><h1 class="s-title">SYSTEM ONLINE</h1><p class="s-sub">向下滚动 / 方向键 / 点击右侧指示 —— 体验“代码注入”式翻页转场。<br>翻页时终端日志逐行打印、进度条推进，安静、不抖动、无代码雨。</p></section>
+  <section id="s1"><div class="s-tag">// SECTOR 01</div><h1 class="s-title">PAYLOAD INJECTED</h1><p class="s-sub">用纯终端打字机表现“程序写入”的过程，替代扫描线与故障抖动。<br>这是“视觉转场演示”，不含任何真实恶意代码。</p></section>
+  <section id="s2"><div class="s-tag">// SECTOR 02</div><h1 class="s-title">ROOT ACCESS</h1><p class="s-sub">满意这套效果后，可整合进主站作为翻页过渡。<br>也可调整配色（绿/红/青）、时长与文案。</p></section>
+</main>
+
+<div class="hint">滚轮 / ↓↑ / 点击右侧 → 翻页（代码转场）</div>
+<nav class="pager" id="pager"></nav>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- 整页翻页控制 ----------
+  var ids = ['s0','s1','s2'];
+  var pages = ids.map(function (id){ return document.getElementById(id); });
+  var pagerEl = document.getElementById('pager');
+  var dots = [];
+  ids.forEach(function (id, i) {
+    var b = document.createElement('button');
+    b.setAttribute('aria-label', id);
+    b.addEventListener('click', function(){ go(i); });
+    pagerEl.appendChild(b);
+    dots.push(b);
+  });
+  var current = 0, locked = false;
+  function setActive(n){ dots.forEach(function(d,i){ d.classList.toggle('act', i===n); }); }
+  function go(target){
+    target = Math.max(0, Math.min(pages.length-1, target));
+    if (target === current || locked) return;
+    current = target; locked = true; setActive(current);
+    codeTransition();                 // 触发代码转场
+    pages[current].scrollIntoView({ behavior:'smooth' });
+    var done=false;
+    function fin(){ if(done)return; done=true; locked=false; }
+    window.addEventListener('scrollend', fin, { once:true });
+    setTimeout(fin, 1400);
+  }
+
+  // ---------- 代码翻页过渡（打字机 + 进度条，无抖动/无雨） ----------
+  var vscan = document.getElementById('vscan');
+  var txt = document.getElementById('termText');
+  var warn = document.getElementById('warn');
+  var vbar = document.getElementById('vbar');
+  var vp = document.getElementById('vp');
+
+  var lines = [
+    '> INIT HANDSHAKE 0xC0FFEE',
+    '> SCANNING VULNERABILITIES...',
+    '> EXPLOIT: buffer_overflow [OK]',
+    '> PRIVILEGE ESCALATION [OK]',
+    '> INJECTING PAYLOAD ██████',
+    '> CORRUPTING KERNEL ░▒▓',
+    '> ROOTKIT DEPLOYED',
+    '> SYSTEM COMPROMISED'
+  ];
+  var warnLines = ['⚠ MALWARE DETECTED','⚠ TRACE 0xDEADBEEF','⚠ ENCRYPTING SECTOR...','⚠ ACCESS: GRANTED'];
+  var timers = [];
+  function clearTimers(){ timers.forEach(function(t){ clearInterval(t); clearTimeout(t); }); timers=[]; }
+
+  function codeTransition(){
+    vscan.classList.add('on');
+    txt.textContent = ''; vbar.style.width = '0%'; vp.textContent = '0%'; warn.textContent = warnLines[0];
+    var full = lines.join('\n');
+    var buf = '', i = 0;
+    // 终端打字机：逐批字符打印日志
+    var t1 = setInterval(function(){
+      buf += full.slice(i, i+2); i += 2; txt.textContent = buf;
+      if (i >= full.length){ clearInterval(t1); txt.textContent = full; }
+    }, 12);
+    timers.push(t1);
+    // 进度条 + 百分比读数
+    var p = 0;
+    var t2 = setInterval(function(){
+      p += Math.random()*14 + 6; if (p > 100) p = 100;
+      vbar.style.width = p + '%'; vp.textContent = Math.floor(p) + '%';
+      if (p >= 100) clearInterval(t2);
+    }, 95);
+    timers.push(t2);
+    // 右侧红色告警：静止轮换文字（不抖动）
+    var wi = 1;
+    var t3 = setInterval(function(){ warn.textContent = warnLines[wi % warnLines.length]; wi++; }, 380);
+    timers.push(t3);
+    // 收尾
+    var t4 = setTimeout(function(){
+      vscan.classList.remove('on');
+      document.body.classList.add('glitch-boot');   // 遮罩消失瞬间：正文故障衔接
+      clearTimers();
+      txt.textContent = '';
+      setTimeout(function(){ document.body.classList.remove('glitch-boot'); }, 620);
+    }, 1350);
+    timers.push(t4);
+  }
+
+  // ---------- 输入 ----------
+  var full = window.matchMedia('(min-width:1024px) and (pointer:fine)').matches;
+  if (full){
+    addEventListener('wheel', function(e){ e.preventDefault(); if(locked||Math.abs(e.deltaY)<8)return; go(current+(e.deltaY>0?1:-1)); }, {passive:false});
+    var sy=null;
+    addEventListener('touchstart', function(e){ sy=e.touches[0].clientY; }, {passive:true});
+    addEventListener('touchmove', function(e){ if(locked||sy===null)return; var dy=sy-e.touches[0].clientY; if(Math.abs(dy)>50){ go(current+(dy>0?1:-1)); sy=null; } }, {passive:true});
+    addEventListener('touchend', function(){ sy=null; });
+    addEventListener('keydown', function(e){
+      if(e.key==='ArrowDown'||e.key==='PageDown'){e.preventDefault();go(current+1);}
+      else if(e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();go(current-1);}
+      else if(e.key==='Home'){go(0);} else if(e.key==='End'){go(pages.length-1);}
+    });
+  }
+  setActive(0);
+})();
+</script>
+</body>
+</html>

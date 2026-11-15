@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AETHER FRONTIER · 以太边境</title>
+  <meta name="description" content="AETHER FRONTIER — 一个受沉浸式科技风启发的原创风格演示站点。" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- 首屏加载仪式 / Preloader -->
+  <div class="loader" id="loader">
+    <div class="loader__wheel" aria-hidden="true">
+      <span class="wheel__ring"></span>
+      <span class="wheel__ring wheel__ring--2"></span>
+      <span class="wheel__gear"></span>
+      <span class="wheel__core">◈</span>
+    </div>
+    <div class="loader__box">
+      <div class="loader__mark">◈</div>
+      <div class="loader__brand">AETHER FRONTIER</div>
+      <div class="loader__bar"><i id="loaderBar"></i></div>
+      <div class="loader__pct"><span id="loaderPct">0</span><span class="loader__unit">%</span></div>
+    </div>
+  </div>
+
+  <!-- 滚动进度条 -->
+  <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+
+  <!-- 背景层 -->
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-glow" aria-hidden="true"></div>
+  <div class="bg-noise" aria-hidden="true"></div>
+
+  <!-- 顶栏 -->
+  <header class="nav" id="nav">
+    <div class="nav__inner">
+      <a class="nav__brand" href="#top">
+        <span class="nav__mark">◈</span>
+        <span class="nav__name">AETHER<span class="nav__name-sub">FRONTIER</span></span>
+      </a>
+      <nav class="nav__menu" id="navMenu">
+        <a href="#news" class="nav__link" data-en="NEWS">公告</a>
+        <a href="#operators" class="nav__link" data-en="OPERATORS">干员</a>
+        <a href="#modules" class="nav__link" data-en="MODULES">模块</a>
+        <a href="#timeline" class="nav__link" data-en="TIMELINE">时间线</a>
+        <a href="#about" class="nav__link" data-en="ABOUT">关于</a>
+      </nav>
+      <button class="nav__toggle" id="navToggle" aria-label="菜单">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Hero（含视差层 + 几何装饰） -->
+  <section class="hero" id="top">
+    <div class="hero__bg" id="heroBg" aria-hidden="true">
+      <span class="geo geo--ring" style="--x:82%;--y:18%;--s:240px"></span>
+      <span class="geo geo--diamond" style="--x:12%;--y:70%;--s:160px"></span>
+      <span class="geo geo--line" style="--x:60%;--y:88%"></span>
+      <span class="geo geo--ring sm" style="--x:30%;--y:24%;--s:90px"></span>
+      <span class="geo geo--radar" style="--x:50%;--y:50%;--s:560px">
+        <i class="radar__ring"></i><i class="radar__ring r2"></i>
+        <i class="radar__cross radar__cross--h"></i><i class="radar__cross radar__cross--v"></i>
+        <i class="radar__sweep"></i>
+      </span>
+    </div>
+    <div class="hero__inner">
+      <p class="hero__eyebrow">PROJECT ARCHIVE <span class="slash">//</span> 档案编号 AF-001</p>
+      <h1 class="hero__title">
+        <span class="hero__title-en" data-text="AETHER FRONTIER">AETHER FRONTIER</span>
+        <span class="hero__title-cn">以 太 边 境</span>
+      </h1>
+      <p class="hero__desc">
+        在静默的边境之上，记录每一次出发与归来。<br />
+        这是一个受沉浸式科技视觉启发的原创演示站点。
+      </p>
+      <div class="hero__actions">
+        <a href="#news" class="btn btn--primary">READ MORE<span class="btn__cn">查看公告</span></a>
+        <a href="#operators" class="btn btn--ghost">ENTER ARCHIVE<span class="btn__cn">进入档案</span></a>
+      </div>
+    </div>
+    <div class="hero__scroll" aria-hidden="true">
+      <span>SCROLL</span>
+      <i></i>
+    </div>
+  </section>
+
+  <!-- 公告 -->
+  <section class="section" id="news">
+    <span class="section__tag">// 01</span>
+    <div class="section__head">
+      <h2 class="section__title"><span class="en">NEWS</span><span class="cn">公告</span></h2>
+      <a href="#" class="section__more">ALL NEWS <span class="arrow">→</span></a>
+    </div>
+    <ul class="news">
+      <li class="news__item reveal">
+        <div class="news__date"><span class="y">2026</span><span class="md">11 / 08</span></div>
+        <div class="news__body">
+          <span class="news__tag">维护</span>
+          <a href="#" class="news__title">[以太边境] 11月08日停机维护结束公告</a>
+        </div>
+      </li>
+      <li class="news__item reveal">
+        <div class="news__date"><span class="y">2026</span><span class="md">11 / 08</span></div>
+        <div class="news__body">
+          <span class="news__tag">通知</span>
+          <a href="#" class="news__title">[以太边境] 服务器延迟开启公告</a>
+        </div>
+      </li>
+      <li class="news__item reveal">
+        <div class="news__date"><span class="y">2026</span><span class="md">11 / 08</span></div>
+        <div class="news__body">
+          <span class="news__tag">维护</span>
+          <a href="#" class="news__title">[以太边境] 16:00 服务器停机维护公告</a>
+        </div>
+      </li>
+      <li class="news__item reveal">
+        <div class="news__date"><span class="y">2026</span><span class="md">11 / 01</span></div>
+        <div class="news__body">
+          <span class="news__tag">活动</span>
+          <a href="#" class="news__title">[以太边境] 「深境远征」赛季开启预告</a>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- 干员 / 角色卡 -->
+  <section class="section" id="operators">
+    <span class="section__tag">// 02</span>
+    <div class="section__head">
+      <h2 class="section__title"><span class="en">OPERATORS</span><span class="cn">干员档案</span></h2>
+      <a href="#" class="section__more">VIEW ALL <span class="arrow">→</span></a>
+    </div>
+    <div class="cards">
+      <article class="card reveal">
+        <div class="card__inner">
+          <div class="card__face card__front">
+            <div class="card__art" data-seed="1"><span class="card__code">K-01</span><span class="card__scan"></span></div>
+            <div class="card__meta">
+              <h3 class="card__name">ALPHA<span class="card__cn">代号 α</span></h3>
+              <p class="card__line">边境侦察单位 · 高机动近战</p>
+            </div>
+          </div>
+          <div class="card__face card__back">
+            <span class="card__code card__code--back">K-01</span>
+            <h3 class="card__back-title">ALPHA · 代号 α</h3>
+            <p class="card__back-text">高机动侦察，擅长侧翼突袭与情报实时回传，单兵突破能力强。</p>
+            <span class="card__back-tag">STATUS · ACTIVE</span>
+          </div>
+        </div>
+      </article>
+      <article class="card reveal">
+        <div class="card__inner">
+          <div class="card__face card__front">
+            <div class="card__art" data-seed="2"><span class="card__code">K-02</span><span class="card__scan"></span></div>
+            <div class="card__meta">
+              <h3 class="card__name">BETA<span class="card__cn">代号 β</span></h3>
+              <p class="card__line">源能工程专家 · 范围支援</p>
+            </div>
+          </div>
+          <div class="card__face card__back">
+            <span class="card__code card__code--back">K-02</span>
+            <h3 class="card__back-title">BETA · 代号 β</h3>
+            <p class="card__back-text">源能工程，可为小队提供范围护盾与能量补给，续航核心。</p>
+            <span class="card__back-tag">STATUS · ACTIVE</span>
+          </div>
+        </div>
+      </article>
+      <article class="card reveal">
+        <div class="card__inner">
+          <div class="card__face card__front">
+            <div class="card__art" data-seed="3"><span class="card__code">K-03</span><span class="card__scan"></span></div>
+            <div class="card__meta">
+              <h3 class="card__name">GAMMA<span class="card__cn">代号 γ</span></h3>
+              <p class="card__line">前线医疗 · 持续续航</p>
+            </div>
+          </div>
+          <div class="card__face card__back">
+            <span class="card__code card__code--back">K-03</span>
+            <h3 class="card__back-title">GAMMA · 代号 γ</h3>
+            <p class="card__back-text">前线医疗，专注持续续航与战场救援，后撤线守护者。</p>
+            <span class="card__back-tag">STATUS · ACTIVE</span>
+          </div>
+        </div>
+      </article>
+      <article class="card reveal">
+        <div class="card__inner">
+          <div class="card__face card__front">
+            <div class="card__art" data-seed="4"><span class="card__code">K-04</span><span class="card__scan"></span></div>
+            <div class="card__meta">
+              <h3 class="card__name">DELTA<span class="card__cn">代号 δ</span></h3>
+              <p class="card__line">远程压制 · 精准打击</p>
+            </div>
+          </div>
+          <div class="card__face card__back">
+            <span class="card__code card__code--back">K-04</span>
+            <h3 class="card__back-title">DELTA · 代号 δ</h3>
+            <p class="card__back-text">远程压制，精准打击高价值目标，火力覆盖范围广。</p>
+            <span class="card__back-tag">STATUS · ACTIVE</span>
+          </div>
+        </div>
+      </article>
+      <article class="card reveal">
+        <div class="card__inner">
+          <div class="card__face card__front">
+            <div class="card__art" data-seed="5"><span class="card__code">K-05</span><span class="card__scan"></span></div>
+            <div class="card__meta">
+              <h3 class="card__name">EPSILON<span class="card__cn">代号 ε</span></h3>
+              <p class="card__line">情报解析 · 战术指挥</p>
+            </div>
+          </div>
+          <div class="card__face card__back">
+            <span class="card__code card__code--back">K-05</span>
+            <h3 class="card__back-title">EPSILON · 代号 ε</h3>
+            <p class="card__back-text">情报解析，负责战术指挥与态势预测，决策中枢。</p>
+            <span class="card__back-tag">STATUS · ACTIVE</span>
+          </div>
+        </div>
+      </article>
+      <article class="card reveal">
+        <div class="card__inner">
+          <div class="card__face card__front">
+            <div class="card__art" data-seed="6"><span class="card__code">K-06</span><span class="card__scan"></span></div>
+            <div class="card__meta">
+              <h3 class="card__name">ZETA<span class="card__cn">代号 ζ</span></h3>
+              <p class="card__line">重装壁垒 · 区域封锁</p>
+            </div>
+          </div>
+          <div class="card__face card__back">
+            <span class="card__code card__code--back">K-06</span>
+            <h3 class="card__back-title">ZETA · 代号 ζ</h3>
+            <p class="card__back-text">重装壁垒，区域封锁与正面承压，防线中坚。</p>
+            <span class="card__back-tag">STATUS · ACTIVE</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- 模块 / 玩法 -->
+  <section class="section" id="modules">
+    <span class="section__tag">// 03</span>
+    <div class="section__head">
+      <h2 class="section__title"><span class="en">MODULES</span><span class="cn">核心模块</span></h2>
+      <a href="#" class="section__more">EXPLORE <span class="arrow">→</span></a>
+    </div>
+    <div class="modules">
+      <a href="#" class="module reveal">
+        <div class="module__no">01</div>
+        <h3 class="module__title">DEEP EXPEDITION<span class="module__cn">深境远征</span></h3>
+        <p class="module__desc">层层深入的战术生存玩法，每一次抉择都重塑局面。</p>
+        <span class="module__cta">VIEW MORE <span class="arrow">›</span></span>
+      </a>
+      <a href="#" class="module reveal">
+        <div class="module__no">02</div>
+        <h3 class="module__title">TERRA CODE<span class="module__cn">大地编码</span></h3>
+        <p class="module__desc">从零构建你的边境据点，平衡资源与防线。</p>
+        <span class="module__cta">VIEW MORE <span class="arrow">›</span></span>
+      </a>
+      <a href="#" class="module reveal">
+        <div class="module__no">03</div>
+        <h3 class="module__title">ANIMATION<span class="module__cn">衍生影像</span></h3>
+        <p class="module__desc">边境之上的故事，以动态影像延续。</p>
+        <span class="module__cta">VIEW MORE <span class="arrow">›</span></span>
+      </a>
+      <a href="#" class="module reveal">
+        <div class="module__no">04</div>
+        <h3 class="module__title">CHRONICLE<span class="module__cn">编年史</span></h3>
+        <p class="module__desc">以时间线梳理这片土地的每一次震荡。</p>
+        <span class="module__cta">VIEW MORE <span class="arrow">›</span></span>
+      </a>
+    </div>
+  </section>
+
+  <!-- 时间线 -->
+  <section class="section" id="timeline">
+    <span class="section__tag">// 04</span>
+    <div class="section__head">
+      <h2 class="section__title"><span class="en">TIMELINE</span><span class="cn">编年时间线</span></h2>
+    </div>
+    <div class="timeline">
+      <div class="timeline__track">
+        <button class="timeline__year is-active" data-year="2026">2026</button>
+        <button class="timeline__year" data-year="2025">2025</button>
+        <button class="timeline__year" data-year="2024">2024</button>
+        <button class="timeline__year" data-year="2023">2023</button>
+        <button class="timeline__year" data-year="2022">2022</button>
+        <button class="timeline__year" data-year="2021">2021</button>
+      </div>
+      <div class="timeline__panel reveal" id="tlPanel">
+        <h3 class="timeline__hl">2026 — 边境重启</h3>
+        <p class="timeline__text">深境远征赛季开启，新的据点蓝图上线，档案系统完成重构。</p>
+        <ul class="timeline__list">
+          <li><span>11 / 08</span> 服务器维护与赛季更新</li>
+          <li><span>11 / 01</span> 「深境远征」预告发布</li>
+          <li><span>09 / 15</span> 边境档案 2.0 上线</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 关于 -->
+  <section class="section section--about" id="about">
+    <span class="section__tag">// 05</span>
+    <div class="about">
+      <div class="about__text">
+        <h2 class="section__title"><span class="en">ABOUT</span><span class="cn">关于本站</span></h2>
+        <p>
+          本站是一个<strong>原创风格演示</strong>，灵感来自沉浸式科技风宣传站的设计语言
+          —— 暗色基调、几何线条、中英双语标签与卡片网格。
+        </p>
+        <p>
+          所有视觉元素均为占位与原创素材，<strong>不含任何第三方 IP 内容</strong>。
+          它用于展示"如何复刻一套设计语言"，而非复制任何具体产品。
+        </p>
+        <a href="#top" class="btn btn--primary">BACK TO TOP<span class="btn__cn">返回顶部</span></a>
+      </div>
+      <div class="about__panel">
+        <div class="about__stat" data-count="6"><b>06</b><span>干员档案</span></div>
+        <div class="about__stat" data-count="4"><b>04</b><span>核心模块</span></div>
+        <div class="about__stat" data-inf="1"><b>∞</b><span>边境故事</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 页脚 -->
+  <footer class="footer">
+    <div class="footer__inner">
+      <div class="footer__brand">◈ AETHER FRONTIER</div>
+      <p class="footer__note">原创风格演示 · 不含任何第三方 IP 内容 · HTTPS://AETHER-FRONTIER.DEMO</p>
+      <p class="footer__copy">© 2026 AETHER FRONTIER DEMO. 仅供设计语言展示之用。</p>
+    </div>
+  </footer>
+
+  <!-- 右侧翻页指示 -->
+  <nav class="pager" id="pager" aria-hidden="true"></nav>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
