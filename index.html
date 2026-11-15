@@ -27,9 +27,6 @@
     </div>
   </div>
 
-  <!-- 滚动进度条 -->
-  <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
-
   <!-- 背景层 -->
   <div class="bg-grid" aria-hidden="true"></div>
   <div class="bg-glow" aria-hidden="true"></div>
@@ -47,6 +44,7 @@
         <a href="#operators" class="nav__link" data-en="OPERATORS">干员</a>
         <a href="#modules" class="nav__link" data-en="MODULES">模块</a>
         <a href="#timeline" class="nav__link" data-en="TIMELINE">时间线</a>
+        <a href="#profile" class="nav__link" data-en="PROFILE">档案</a>
         <a href="#about" class="nav__link" data-en="ABOUT">关于</a>
       </nav>
       <button class="nav__toggle" id="navToggle" aria-label="菜单">
@@ -54,6 +52,14 @@
       </button>
     </div>
   </header>
+
+  <!-- 吸顶章节标题：翻页全程钉在顶栏下方，只换文字不随画面移动 -->
+  <div class="sticky-title" id="stickyTitle" aria-hidden="true">
+    <div class="sticky-title__inner">
+      <span class="sticky-title__no" id="stickyNo">// 01</span>
+      <h2 class="sticky-title__text"><span class="en" id="stickyEn">NEWS</span><span class="cn" id="stickyCn">公告</span></h2>
+    </div>
+  </div>
 
   <!-- Hero（含视差层 + 几何装饰） -->
   <section class="hero" id="top">
@@ -303,9 +309,174 @@
     </div>
   </section>
 
+  <!-- 个人档案 / 简历 -->
+  <section class="section section--profile" id="profile">
+    <span class="section__tag">// 05</span>
+    <div class="section__head">
+      <h2 class="section__title"><span class="en">PROFILE</span><span class="cn">个人档案</span></h2>
+      <div class="profile__toggle">
+        <button class="profile__btn on" data-view="card" type="button">档案分栏</button>
+        <button class="profile__btn" data-view="tl" type="button">时间线履历</button>
+      </div>
+    </div>
+    <div class="profile__wrap">
+      <!-- 视图 A：档案分栏（要点常驻，悬停 1s 反差色展示详情） -->
+      <div class="profile__layout" id="pfCard">
+        <div class="split">
+          <aside class="prof">
+            <div class="avatar">◈</div>
+            <h3>tuotuooo</h3>
+            <div class="role">信创整机原厂 FAE ｜ 国产化交付与运维 ｜ AI 自动化工具实践</div>
+            <div class="aim">FAE / 信创交付 / 技术支持</div>
+
+            <div class="side-title">核心技能</div>
+            <div class="tags">
+              <span>银河麒麟 / UOS</span><span>openEuler</span><span>达梦 / 金仓</span>
+              <span>RoseHA 双机热备</span><span>ESXi / vCenter</span><span>Python / Shell</span>
+              <span>KMS 批量激活</span><span>等保 / 国密测评</span>
+            </div>
+
+            <div class="side-title">证书</div>
+            <div class="sitem"><b>H3CSE</b><i>网络高级工程师</i></div>
+            <div class="sitem"><b>H3CNE</b><i>认证网络工程师</i></div>
+            <div class="sitem"><b>NISP 一级</b><i>国家信息安全水平考试</i></div>
+            <div class="sitem"><b>KCA</b><i>金仓数据库认证专员</i></div>
+
+            <div class="side-title">教育经历</div>
+            <div class="sitem"><b>某职业学院</b><i>大专 · 信息安全与管理</i><em>2020.09 – 2023.06</em></div>
+
+            <div class="side-title">其他</div>
+            <div class="sitem"><i>RAID / BMC / IPMI / iDRAC / iLO</i><i>VLAN / DHCP / 路由 / DNS 排错</i><i>AD 域控 / RDS / 终端安全</i></div>
+          </aside>
+
+          <div class="maincol">
+            <div class="sec-title"><h2>STRENGTHS</h2><i>核心优势</i></div>
+            <div class="strength"><b>原厂 FAE 客诉闭环：</b>面向终端客户处理国产主机客诉，覆盖售前适配、售中交付、售后排障，能独立定位系统激活、硬件兼容与批量部署问题。</div>
+            <div class="strength"><b>信创栈 + 高可用交付：</b>熟悉麒麟 / UOS / 达梦 / 金仓 / RoseHA / ESXi，具备国密测评与等保实践背景，能承担信创环境部署与故障处理。</div>
+            <div class="strength"><b>AI 自动化工具落地：</b>自主开发麒麟 KMS 辅助自动激活系统，用 Python / Shell 与 AI 工具解决批量交付中的重复操作问题。</div>
+
+            <div class="sec-title" style="margin-top:18px"><h2>EXPERIENCE</h2><i>工作经历 · 悬停 1s 反差展示</i></div>
+            <div class="acc">
+              <div class="acc__head"><span class="acc__caret">▸</span>
+                <div class="item-head"><div><span class="t">某国产整机原厂</span><span class="s">FAE 现场应用工程师</span></div><div class="d">2025.07 – 至今</div></div>
+              </div>
+              <div class="acc__body"><ul>
+                <li>负责国产主机<b>客诉闭环</b>，覆盖售前适配、售中交付、售后排障，独立处理麒麟激活、硬件兼容、批量部署类问题，推动共性问题回流研发。</li>
+                <li>自主开发<b>麒麟 KMS 辅助自动激活系统</b>：基于 Python / Shell 实现终端信息采集、批量激活触发与结果回传，将批量交付激活由逐台人工转为自动化处理<span class="hint">（可补：覆盖 __ 台 / 单批耗时下降 __%）</span>。</li>
+                <li>输出操作手册并开展客户培训，降低交付后的重复支持成本。</li>
+              </ul></div>
+            </div>
+            <div class="acc">
+              <div class="acc__head"><span class="acc__caret">▸</span>
+                <div class="item-head"><div><span class="t">某信息技术服务公司</span><span class="s">技术支持工程师</span></div><div class="d">2023.06 – 2025.07</div></div>
+              </div>
+              <div class="acc__body"><ul>
+                <li>负责国产操作系统 / 数据库、SQL Server、Windows Server、终端安全、Rose 双机热备、ESXi / vCenter 的<b>安装测试与售后维护</b>。</li>
+                <li>协助现场多厂家完成操作系统、数据库、网络与服务器硬件联调排障；编写使用手册并开展用户培训。</li>
+              </ul></div>
+            </div>
+            <div class="acc">
+              <div class="acc__head"><span class="acc__caret">▸</span>
+                <div class="item-head"><div><span class="t">某密码测评机构</span><span class="s">密码测评工程师（实习）</span></div><div class="d">2022.06 – 2023.03</div></div>
+              </div>
+              <div class="acc__body"><ul>
+                <li>参与商用密码应用安全性评估实施与标准研究，完成多单位国密测评项目；编制测评报告、方案及整改文档。</li>
+              </ul></div>
+            </div>
+
+            <div class="sec-title" style="margin-top:18px"><h2>PROJECTS</h2><i>项目经历 · 悬停 1s 反差展示</i></div>
+            <div class="acc">
+              <div class="acc__head"><span class="acc__caret">▸</span>
+                <div class="item-head"><div><span class="t">麒麟 KMS 辅助自动激活系统</span><span class="badge">自主设计</span></div><div class="d">2025 – 至今</div></div>
+              </div>
+              <div class="acc__body"><ul>
+                <li><b>背景：</b>信创整机批量交付中，内网隔离终端逐台激活效率低、人工依赖高。</li>
+                <li><b>实现：</b>基于 Python / Shell 结合 KMS 激活机制，完成终端信息采集、批量激活触发与结果回传的辅助自动化，并借助 AI 工具辅助开发排查。</li>
+                <li><b>结果：</b>批量激活由逐台人工转为批量自动化处理，减少现场重复操作与遗漏。</li>
+              </ul></div>
+            </div>
+            <div class="acc">
+              <div class="acc__head"><span class="acc__caret">▸</span>
+                <div class="item-head"><div><span class="t">信创高可用与虚拟化交付</span><span class="badge">多个信创交付项目</span></div><div class="d">2024 – 2025</div></div>
+              </div>
+              <div class="acc__body"><ul>
+                <li>搭建 <b>RoseMirrorHA / RoseHA + MySQL / SQL Server</b> 双机热备集群，支撑智能叉车、HIS、WMS 等业务系统高可用运行。</li>
+                <li>完成银河麒麟安全加固（三权分立、系统升级），部署火绒终端安全并定制策略；配置 RAID、部署 ESXi / vCenter 与银河麒麟虚拟机，完成达梦数据库安装调试与定期备份。</li>
+              </ul></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 视图 B：时间线（悬停 1s 反差色展示详情） -->
+      <div class="profile__layout" id="pfTl">
+        <div class="split">
+          <aside class="prof">
+            <div class="avatar">◈</div>
+            <h3>tuotuooo</h3>
+            <div class="role">信创整机原厂 FAE ｜ 国产化交付与运维</div>
+            <div class="aim">FAE / 信创交付 / 技术支持</div>
+            <div class="side-title">核心技能</div>
+            <div class="tags">
+              <span>银河麒麟 / UOS</span><span>openEuler</span><span>达梦 / 金仓</span>
+              <span>RoseHA</span><span>ESXi / vCenter</span><span>Python / Shell</span>
+              <span>KMS 批量激活</span><span>等保 / 国密</span>
+            </div>
+            <div class="side-title">证书</div>
+            <div class="sitem"><b>H3CSE / H3CNE</b><i>网络高级 / 认证工程师</i></div>
+            <div class="sitem"><b>NISP 一级</b><i>国家信息安全水平考试</i></div>
+            <div class="sitem"><b>KCA</b><i>金仓数据库认证专员</i></div>
+          </aside>
+
+          <div class="maincol">
+            <div class="sec-title"><h2>TIMELINE</h2><i>履历时间线 · 悬停 1s 反差展示</i></div>
+            <div class="tl">
+              <div class="acc">
+                <div class="acc__head"><span class="acc__caret">▸</span>
+                  <span class="tl__yr">2020.09 – 2023.06</span><span class="tl__role">某职业学院 · 大专</span>
+                </div>
+                <div class="acc__body"><div class="tl__org">信息安全与管理（教育）</div><div class="tl__desc">主修信息安全与管理，奠定信创与网络基础。</div></div>
+              </div>
+              <div class="acc">
+                <div class="acc__head"><span class="acc__caret">▸</span>
+                  <span class="tl__yr">2022.06 – 2023.03</span><span class="tl__role">某密码测评机构</span>
+                </div>
+                <div class="acc__body"><div class="tl__org">密码测评工程师（实习）</div><div class="tl__desc">参与商用密码应用安全性评估实施与标准研究，完成多单位国密测评项目，编制测评报告与整改文档。</div></div>
+              </div>
+              <div class="acc">
+                <div class="acc__head"><span class="acc__caret">▸</span>
+                  <span class="tl__yr">2023.06 – 2025.07</span><span class="tl__role">某信息技术服务公司</span>
+                </div>
+                <div class="acc__body"><div class="tl__org">技术支持工程师</div><div class="tl__desc">负责国产操作系统 / 数据库、SQL Server、Windows Server、终端安全、Rose 双机热备、ESXi / vCenter 安装测试与售后维护；多厂家联调排障与培训。</div></div>
+              </div>
+              <div class="acc">
+                <div class="acc__head"><span class="acc__caret">▸</span>
+                  <span class="tl__yr">2024 – 2025</span><span class="tl__role">信创高可用与虚拟化交付</span>
+                </div>
+                <div class="acc__body"><div class="tl__org">多个信创交付项目</div><div class="tl__desc">搭建 RoseHA 双机热备集群；银河麒麟安全加固、火绒终端安全；RAID / ESXi / vCenter 与达梦数据库部署备份。</div></div>
+              </div>
+              <div class="acc">
+                <div class="acc__head"><span class="acc__caret">▸</span>
+                  <span class="tl__yr">2025.07 – 至今</span><span class="tl__role">某国产整机原厂</span>
+                </div>
+                <div class="acc__body"><div class="tl__org">FAE 现场应用工程师</div><div class="tl__desc">国产主机客诉闭环（售前/售中/售后）；自主开发麒麟 KMS 辅助自动激活系统，实现批量激活自动化。</div></div>
+              </div>
+              <div class="acc">
+                <div class="acc__head"><span class="acc__caret">▸</span>
+                  <span class="tl__yr">2025 – 至今</span><span class="tl__role">麒麟 KMS 辅助自动激活系统</span>
+                </div>
+                <div class="acc__body"><div class="tl__org">自主设计项目</div><div class="tl__desc">基于 Python / Shell + KMS 机制，终端信息采集、批量激活触发与结果回传一键化，借助 AI 工具辅助开发排查。</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- 关于 -->
   <section class="section section--about" id="about">
-    <span class="section__tag">// 05</span>
+    <span class="section__tag">// 06</span>
     <div class="about">
       <div class="about__text">
         <h2 class="section__title"><span class="en">ABOUT</span><span class="cn">关于本站</span></h2>
@@ -335,9 +506,6 @@
       <p class="footer__copy">© 2026 AETHER FRONTIER DEMO. 仅供设计语言展示之用。</p>
     </div>
   </footer>
-
-  <!-- 右侧翻页指示 -->
-  <nav class="pager" id="pager" aria-hidden="true"></nav>
 
   <script src="js/main.js"></script>
 </body>

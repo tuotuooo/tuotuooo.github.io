@@ -35,18 +35,8 @@
     else nav.classList.remove('is-scrolled');
   }
 
-  // 滚动进度条
-  var progress = document.getElementById('scrollProgress');
-  function onScrollProgress() {
-    var h = document.documentElement;
-    var max = h.scrollHeight - h.clientHeight;
-    var pct = max > 0 ? (h.scrollTop || window.scrollY) / max * 100 : 0;
-    progress.style.width = pct + '%';
-  }
-  window.addEventListener('scroll', function () {
-    onScrollNav(); onScrollProgress();
-  }, { passive: true });
-  onScrollNav(); onScrollProgress();
+  window.addEventListener('scroll', onScrollNav, { passive: true });
+  onScrollNav();
 
   // Hero 鼠标视差
   var heroBg = document.getElementById('heroBg');
@@ -78,12 +68,11 @@
     titleEn.dataset.split = '1';
   }
 
-  // 翻页：右侧指示 + 线条过渡 + 整页翻页控制
+  // 翻页：整页翻页控制 + 进入/退出特效
   (function pager() {
-    var pagerEl = document.getElementById('pager');
-    var ids = ['top', 'news', 'operators', 'modules', 'timeline', 'about'];
+    var ids = ['top', 'news', 'operators', 'modules', 'timeline', 'profile', 'about'];
     var pages = ids.map(function (id) { return document.getElementById(id); }).filter(Boolean);
-    var sectMap = {}; var dots = []; var idx = 0; var locked = false;
+    var sectMap = {};
 
     pages.forEach(function (sec) {
       if (sec.classList.contains('section')) {
@@ -97,19 +86,40 @@
       }
       sectMap[sec.id] = sec;
     });
-    ids.forEach(function (id, i) {
-      var dot = document.createElement('button');
-      dot.className = 'pager__dot';
-      dot.setAttribute('data-label', id.toUpperCase());
-      dot.setAttribute('aria-label', id);
-      dot.addEventListener('click', function () { go(i); });
-      pagerEl.appendChild(dot);
-      dots.push({ id: id, el: dot });
+    // 吸顶标题（仅桌面整页翻页启用）：切屏时把文字换成目标屏标题并重播故障动画
+    var stickyEl = document.getElementById('stickyTitle');
+    var stickyNo = document.getElementById('stickyNo');
+    var stickyEn = document.getElementById('stickyEn');
+    var stickyCn = document.getElementById('stickyCn');
+    var stickyEnable = window.matchMedia('(min-width: 1024px) and (pointer: fine)').matches;
+    var titleData = {};
+    pages.forEach(function (sec) {
+      var t = sec.querySelector('.section__title');
+      var tag = sec.querySelector('.section__tag');
+      if (t) titleData[sec.id] = {
+        en: t.querySelector('.en') ? t.querySelector('.en').textContent.trim() : '',
+        cn: t.querySelector('.cn') ? t.querySelector('.cn').textContent.trim() : '',
+        no: tag ? tag.textContent.trim() : ''
+      };
     });
+    var lastStickyId = null;
+    function updateSticky(id) {
+      if (!stickyEl) return;
+      var d = titleData[id];
+      if (!stickyEnable || !d) { stickyEl.classList.remove('show'); lastStickyId = null; return; }
+      stickyEl.classList.add('show');
+      if (id === lastStickyId) return;
+      lastStickyId = id;
+      stickyNo.textContent = d.no;
+      stickyEn.textContent = d.en;
+      stickyCn.textContent = d.cn;
+      stickyEn.classList.remove('glitch'); void stickyEn.offsetWidth; stickyEn.classList.add('glitch');
+    }
+    if (stickyEnable) document.body.classList.add('sticky-mode');
 
     function setActive(id) {
-      dots.forEach(function (d) { d.el.classList.toggle('is-active', d.id === id); });
       if (sectMap[id]) sectMap[id].classList.add('in');
+      updateSticky(id);
     }
     var current = 0;
     var locked = false;
@@ -120,11 +130,56 @@
       locked = true;
       pages[current].scrollIntoView({ behavior: 'smooth' });
       setActive(pages[current].id);
+      // 让地址栏反映当前屏（replaceState 不新增历史、不触发原生跳转/hashchange）
+      try { history.replaceState(null, '', '#' + pages[current].id); } catch (e) {}
       var done = false;
       function fin() { if (done) return; done = true; locked = false; }
       window.addEventListener('scrollend', fin, { once: true });
       setTimeout(fin, 1000);
     }
+
+    // 修复：所有站内锚点链接统一走 go()，避免原生跳转绕过控制器导致 current 与视口错位
+    // （顶栏导航、Logo、Hero 按钮、返回顶部等；空 href="#" 或无关锚点不拦截）
+    document.querySelectorAll('a[href^="#"]').forEach(function (a) {
+      var id = a.getAttribute('href').slice(1);
+      var idx = ids.indexOf(id);
+      if (idx < 0) return;
+      a.addEventListener('click', function (e) { e.preventDefault(); go(idx); });
+    });
+
+    // 自愈兜底：任何原生滚动 / scroll-snap 吸附 / 直接改 hash 后，滚动静止时按视口反推并校正 current
+    // 这样无论从哪条路径跳页，滚轮/方向键的翻页基准始终是"视口真正所在屏"
+    var syncTimer = null;
+    window.addEventListener('scroll', function () {
+      if (locked) return;
+      clearTimeout(syncTimer);
+      syncTimer = setTimeout(function () {
+        var mid = window.scrollY + window.innerHeight / 2;
+        var best = current, bestD = Infinity;
+        pages.forEach(function (p, i) {
+          var c = p.offsetTop + p.offsetHeight / 2;
+          var d = Math.abs(c - mid);
+          if (d < bestD) { bestD = d; best = i; }
+        });
+        current = best;
+        updateSticky(pages[best].id);
+      }, 160);
+    }, { passive: true });
+
+    // 带 #hash 打开/刷新、浏览器前进后退时，同步到对应屏
+    function syncHash(instant) {
+      var idx = ids.indexOf(location.hash.slice(1));
+      if (idx < 0) return;
+      if (instant) {
+        current = idx;
+        pages[idx].scrollIntoView({ behavior: 'auto' });
+        setActive(pages[idx].id);
+      } else {
+        go(idx);
+      }
+    }
+    if (location.hash) syncHash(true);
+    window.addEventListener('hashchange', function () { syncHash(false); });
 
     // 进入/离开视口：触发元素进入与退出特效（兼容窄屏原生滚动）
     var counted = false;
@@ -146,14 +201,35 @@
         requestAnimationFrame(step);
       });
     }
+    // 个人档案屏：视图切换 + 进场重播
+    var pfLayouts = { card: document.getElementById('pfCard'), tl: document.getElementById('pfTl') };
+    var pfBtns = document.querySelectorAll('.profile__btn');
+    var pfView = 'card';
+    function profileShow(v) {
+      pfView = v;
+      Object.keys(pfLayouts).forEach(function (k) {
+        var el = pfLayouts[k]; if (!el) return;
+        el.classList.remove('show'); void el.offsetWidth;
+        if (k === v) el.classList.add('show');
+      });
+      pfBtns.forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-view') === v); });
+    }
+    pfBtns.forEach(function (b) {
+      b.addEventListener('click', function () { profileShow(b.getAttribute('data-view')); });
+    });
+
     if ('IntersectionObserver' in window) {
       var secIo = new IntersectionObserver(function (entries) {
         entries.forEach(function (e) {
           if (e.isIntersecting) {
             e.target.classList.add('in'); e.target.classList.remove('out');
             if (e.target.id === 'about' && !counted) { counted = true; countUp(); }
+            if (e.target.id === 'profile') { profileShow(pfView); }
           } else {
             e.target.classList.add('out'); e.target.classList.remove('in');
+            if (e.target.id === 'profile') {
+              Object.keys(pfLayouts).forEach(function (k) { if (pfLayouts[k]) pfLayouts[k].classList.remove('show'); });
+            }
           }
         });
       }, { threshold: 0.25 });
@@ -164,9 +240,10 @@
     var fullpage = window.matchMedia('(min-width: 1024px) and (pointer: fine)').matches;
     if (fullpage) {
       window.addEventListener('wheel', function (e) {
-        e.preventDefault();
         if (locked || Math.abs(e.deltaY) < 8) return;
-        go(current + (e.deltaY > 0 ? 1 : -1));
+        var dir = e.deltaY > 0 ? 1 : -1;
+        e.preventDefault();
+        go(current + dir);
       }, { passive: false });
       var sy = null;
       window.addEventListener('touchstart', function (e) { sy = e.touches[0].clientY; }, { passive: true });
@@ -186,6 +263,65 @@
     setActive('top');
   })();
 
+  // 干员卡：悬停满 2s 才浮出隐藏信息（替代点击翻牌）
+  (function cardReveal() {
+    var cards = document.querySelectorAll('#operators .card');
+    var canHover = window.matchMedia('(hover: hover)').matches;
+    cards.forEach(function (card) {
+      var timer = null;
+      if (canHover) {
+        card.addEventListener('mouseenter', function () {
+          clearTimeout(timer);
+          timer = setTimeout(function () { card.classList.add('revealed'); }, 2000);
+        });
+        card.addEventListener('mouseleave', function () {
+          clearTimeout(timer);
+          card.classList.remove('revealed');
+        });
+      } else {
+        // 触屏设备：点击切换隐藏信息
+        card.addEventListener('click', function () { card.classList.toggle('revealed'); });
+      }
+    });
+  })();
+
+  // 档案屏：悬停满 1s → 反差色覆盖展示隐藏详情（触屏则点击切换）
+  (function profileReveal() {
+    var accs = document.querySelectorAll('#profile .acc');
+    var canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    accs.forEach(function (acc) {
+      // 自动生成一行摘要（取首条要点 / 时间线取描述，截断），让单屏常驻可读
+      if (!acc.querySelector('.acc__sum')) {
+        var b = acc.querySelector('.acc__body');
+        var txt = '';
+        if (b) {
+          var firstLi = b.querySelector('li');
+          var desc = b.querySelector('.tl__desc');
+          txt = firstLi ? firstLi.textContent : (desc ? desc.textContent : '');
+          txt = txt.replace(/\s+/g, ' ').trim();
+          if (txt.length > 46) txt = txt.slice(0, 46) + '…';
+        }
+        var sum = document.createElement('div');
+        sum.className = 'acc__sum';
+        sum.textContent = txt;
+        acc.insertBefore(sum, acc.querySelector('.acc__body'));
+      }
+      if (canHover) {
+        var timer = null;
+        acc.addEventListener('mouseenter', function () {
+          clearTimeout(timer);
+          timer = setTimeout(function () { acc.classList.add('revealed'); }, 1000);
+        });
+        acc.addEventListener('mouseleave', function () {
+          clearTimeout(timer);
+          acc.classList.remove('revealed');
+        });
+      } else {
+        acc.addEventListener('click', function () { acc.classList.toggle('revealed'); });
+      }
+    });
+  })();
+
   // 移动端菜单
   var toggle = document.getElementById('navToggle');
   var menu = document.getElementById('navMenu');
@@ -195,7 +331,7 @@
   });
 
   // 导航高亮
-  var sections = ['news', 'operators', 'modules', 'timeline', 'about']
+  var sections = ['news', 'operators', 'modules', 'timeline', 'profile', 'about']
     .map(function (id) { return document.getElementById(id); })
     .filter(Boolean);
   var links = {};
