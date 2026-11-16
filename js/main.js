@@ -122,7 +122,8 @@
       updateSticky(id);
     }
     var current = 0;
-    var locked = false;
+    var locked = false;          // 动画锁：平滑滚动进行中，避免自愈误校正
+    var goTimer = null;
     function go(target) {
       target = Math.max(0, Math.min(pages.length - 1, target));
       if (target === current) return;
@@ -132,10 +133,10 @@
       setActive(pages[current].id);
       // 让地址栏反映当前屏（replaceState 不新增历史、不触发原生跳转/hashchange）
       try { history.replaceState(null, '', '#' + pages[current].id); } catch (e) {}
-      var done = false;
-      function fin() { if (done) return; done = true; locked = false; }
-      window.addEventListener('scrollend', fin, { once: true });
-      setTimeout(fin, 1000);
+      // 不用 scrollend 解锁：smooth + scroll-snap 共存时它会在动画中途误触发，
+      // 导致锁提前解开、惯性余波连翻。改用覆盖整个动画时长的定时器。
+      clearTimeout(goTimer);
+      goTimer = setTimeout(function () { locked = false; }, 800);
     }
 
     // 修复：所有站内锚点链接统一走 go()，避免原生跳转绕过控制器导致 current 与视口错位
@@ -239,10 +240,23 @@
     // 桌面鼠标/键盘：一次滑动 = 翻一整页
     var fullpage = window.matchMedia('(min-width: 1024px) and (pointer: fine)').matches;
     if (fullpage) {
+      // 手势去抖：一长串连续滚轮（含惯性余波）只翻一页；
+      // 手停下 IDLE_MS 后释放，下一次滑动才翻下一页。
+      var wheelIdle = null;
+      var wheelArmed = true;
+      var IDLE_MS = 220;
       window.addEventListener('wheel', function (e) {
-        if (locked || Math.abs(e.deltaY) < 8) return;
-        var dir = e.deltaY > 0 ? 1 : -1;
+        if (Math.abs(e.deltaY) < 8) return;
         e.preventDefault();
+        if (!wheelArmed) {                 // 手势未结束：吞掉，并顺延释放时间
+          clearTimeout(wheelIdle);
+          wheelIdle = setTimeout(function () { wheelArmed = true; }, IDLE_MS);
+          return;
+        }
+        wheelArmed = false;                // 新手势：翻一页后进入静默
+        clearTimeout(wheelIdle);
+        wheelIdle = setTimeout(function () { wheelArmed = true; }, IDLE_MS);
+        var dir = e.deltaY > 0 ? 1 : -1;
         go(current + dir);
       }, { passive: false });
       var sy = null;
