@@ -663,3 +663,43 @@ body::after {
 @media (max-width: 860px) {
   .split { grid-template-columns: 1fr; }
 }
+
+/* ============================================================
+   无障碍 / 降级（本次重构新增）
+   ============================================================ */
+
+/* 键盘焦点可见：仅在键盘聚焦时显示，鼠标点击不干扰视觉 */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+/* 桌面整页模式由 JS 精确接管滚动，关闭 CSS 吸附，
+   避免 scroll-snap proximity 与 scrollIntoView 干扰 scrollend。 */
+html.no-snap { scroll-snap-type: none; }
+
+/* 尊重系统"减少动态效果"：关闭无限动画与位移，保留静态可读布局 */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; scroll-snap-type: none; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  /* 动画原本负责把元素带入可见态；降级下强制显示，避免内容消失 */
+  .hero__inner,
+  .hero__title-en .ch,
+  .section__head, .news__item, .card, .module,
+  .timeline__panel, .about__stat,
+  .profile__layout .prof, .profile__layout .sec-title,
+  .profile__layout .strength, .profile__layout .acc {
+    opacity: 1 !important;
+    transform: none !important;
+    clip-path: none !important;
+    animation: none !important;
+  }
+  .hud, .seg-line { opacity: 1 !important; transform: none !important; }
+  .profile__layout { visibility: hidden; }
+  .profile__layout.show { visibility: visible; }
+}

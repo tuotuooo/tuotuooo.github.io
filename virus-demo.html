@@ -8,6 +8,8 @@
 :root{ --grn:#39ff14; --grn2:#00ff9c; --red:#ff2e4d; --cyan:#36e6ff; --bg:#06080a; }
 *{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;scroll-snap-type:y mandatory;}
+/* 桌面整页模式由公共控制器接管，关闭吸附避免干扰 */
+html.no-snap{scroll-snap-type:none;}
 body{background:var(--bg);color:var(--grn);font-family:"Courier New",ui-monospace,monospace;overflow-x:hidden;}
 section{min-height:100vh;scroll-snap-align:start;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:40px;text-align:center;position:relative;}
 .s-tag{font-size:12px;letter-spacing:6px;color:var(--grn2);opacity:.7;}
@@ -72,35 +74,21 @@ body.glitch-boot main{animation:bootFreeze .6s steps(3,end) 1;}
 <div class="hint">滚轮 / ↓↑ / 点击右侧 → 翻页（代码转场）</div>
 <nav class="pager" id="pager"></nav>
 
+<script src="js/pager.js"></script>
 <script>
 (function () {
   'use strict';
 
-  // ---------- 整页翻页控制 ----------
-  var ids = ['s0','s1','s2'];
-  var pages = ids.map(function (id){ return document.getElementById(id); });
+  // ---------- 右侧翻页指示（由 onActivate 派生高亮，不再各算各的） ----------
+  var ids = ['s0', 's1', 's2'];
   var pagerEl = document.getElementById('pager');
-  var dots = [];
-  ids.forEach(function (id, i) {
+  var dots = ids.map(function (id, i) {
     var b = document.createElement('button');
-    b.setAttribute('aria-label', id);
-    b.addEventListener('click', function(){ go(i); });
+    b.setAttribute('aria-label', '第 ' + (i + 1) + ' 屏');
+    b.addEventListener('click', function () { pager && pager.go(i); });
     pagerEl.appendChild(b);
-    dots.push(b);
+    return b;
   });
-  var current = 0, locked = false;
-  function setActive(n){ dots.forEach(function(d,i){ d.classList.toggle('act', i===n); }); }
-  function go(target){
-    target = Math.max(0, Math.min(pages.length-1, target));
-    if (target === current || locked) return;
-    current = target; locked = true; setActive(current);
-    codeTransition();                 // 触发代码转场
-    pages[current].scrollIntoView({ behavior:'smooth' });
-    var done=false;
-    function fin(){ if(done)return; done=true; locked=false; }
-    window.addEventListener('scrollend', fin, { once:true });
-    setTimeout(fin, 1400);
-  }
 
   // ---------- 代码翻页过渡（打字机 + 进度条，无抖动/无雨） ----------
   var vscan = document.getElementById('vscan');
@@ -119,59 +107,51 @@ body.glitch-boot main{animation:bootFreeze .6s steps(3,end) 1;}
     '> ROOTKIT DEPLOYED',
     '> SYSTEM COMPROMISED'
   ];
-  var warnLines = ['⚠ MALWARE DETECTED','⚠ TRACE 0xDEADBEEF','⚠ ENCRYPTING SECTOR...','⚠ ACCESS: GRANTED'];
+  var warnLines = ['⚠ MALWARE DETECTED', '⚠ TRACE 0xDEADBEEF', '⚠ ENCRYPTING SECTOR...', '⚠ ACCESS: GRANTED'];
   var timers = [];
-  function clearTimers(){ timers.forEach(function(t){ clearInterval(t); clearTimeout(t); }); timers=[]; }
+  function clearTimers() { timers.forEach(function (t) { clearInterval(t); clearTimeout(t); }); timers = []; }
 
-  function codeTransition(){
+  function codeTransition() {
     vscan.classList.add('on');
     txt.textContent = ''; vbar.style.width = '0%'; vp.textContent = '0%'; warn.textContent = warnLines[0];
     var full = lines.join('\n');
     var buf = '', i = 0;
-    // 终端打字机：逐批字符打印日志
-    var t1 = setInterval(function(){
-      buf += full.slice(i, i+2); i += 2; txt.textContent = buf;
-      if (i >= full.length){ clearInterval(t1); txt.textContent = full; }
+    var t1 = setInterval(function () {
+      buf += full.slice(i, i + 2); i += 2; txt.textContent = buf;
+      if (i >= full.length) { clearInterval(t1); txt.textContent = full; }
     }, 12);
     timers.push(t1);
-    // 进度条 + 百分比读数
     var p = 0;
-    var t2 = setInterval(function(){
-      p += Math.random()*14 + 6; if (p > 100) p = 100;
+    var t2 = setInterval(function () {
+      p += Math.random() * 14 + 6; if (p > 100) p = 100;
       vbar.style.width = p + '%'; vp.textContent = Math.floor(p) + '%';
       if (p >= 100) clearInterval(t2);
     }, 95);
     timers.push(t2);
-    // 右侧红色告警：静止轮换文字（不抖动）
     var wi = 1;
-    var t3 = setInterval(function(){ warn.textContent = warnLines[wi % warnLines.length]; wi++; }, 380);
+    var t3 = setInterval(function () { warn.textContent = warnLines[wi % warnLines.length]; wi++; }, 380);
     timers.push(t3);
-    // 收尾
-    var t4 = setTimeout(function(){
+    var t4 = setTimeout(function () {
       vscan.classList.remove('on');
-      document.body.classList.add('glitch-boot');   // 遮罩消失瞬间：正文故障衔接
+      document.body.classList.add('glitch-boot');
       clearTimers();
       txt.textContent = '';
-      setTimeout(function(){ document.body.classList.remove('glitch-boot'); }, 620);
+      setTimeout(function () { document.body.classList.remove('glitch-boot'); }, 620);
     }, 1350);
     timers.push(t4);
   }
 
-  // ---------- 输入 ----------
-  var full = window.matchMedia('(min-width:1024px) and (pointer:fine)').matches;
-  if (full){
-    addEventListener('wheel', function(e){ e.preventDefault(); if(locked||Math.abs(e.deltaY)<8)return; go(current+(e.deltaY>0?1:-1)); }, {passive:false});
-    var sy=null;
-    addEventListener('touchstart', function(e){ sy=e.touches[0].clientY; }, {passive:true});
-    addEventListener('touchmove', function(e){ if(locked||sy===null)return; var dy=sy-e.touches[0].clientY; if(Math.abs(dy)>50){ go(current+(dy>0?1:-1)); sy=null; } }, {passive:true});
-    addEventListener('touchend', function(){ sy=null; });
-    addEventListener('keydown', function(e){
-      if(e.key==='ArrowDown'||e.key==='PageDown'){e.preventDefault();go(current+1);}
-      else if(e.key==='ArrowUp'||e.key==='PageUp'){e.preventDefault();go(current-1);}
-      else if(e.key==='Home'){go(0);} else if(e.key==='End'){go(pages.length-1);}
+  // ---------- 翻页：唯一的当前屏出口（公共控制器驱动） ----------
+  // codeTransition 只在"非初始化"的翻页时播放；静默自愈不播。
+  function onActivate(id, index, silent) {
+    dots.forEach(function (d, i) {
+      d.classList.toggle('act', i === index);
+      d.setAttribute('aria-current', i === index ? 'true' : 'false');
     });
+    if (!silent) codeTransition();
   }
-  setActive(0);
+
+  var pager = window.AetherPager({ ids: ids, onActivate: onActivate });
 })();
 </script>
 </body>
