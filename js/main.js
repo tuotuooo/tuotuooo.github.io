@@ -300,8 +300,12 @@
   if (pager) {
     stickyEnabled = pager.fullpage && !pager.reduceMotion && !!stickyEl;
     if (stickyEnabled) document.body.classList.add('sticky-mode');
-    // 控制器初始化时已 commit 首屏，这里补一次渲染（导航/动画/档案）
-    onActivate(PAGES[0], 0, true);
+    // pager 初始化时已按当前屏（可能是 #hash 直开）commit 过一次，这里补渲染
+    // 是为了让吸顶标题在 stickyEnabled 就绪后正确显示。
+    // 必须用 pager.current() 取实际当前屏：写死 PAGES[0] 会把 hash 直开的
+    // 状态覆盖回首屏，导致目标屏停在 out 态（正文 opacity:0 一片空白）。
+    var cur = pager.current();
+    if (cur >= 0 && cur < PAGES.length) onActivate(PAGES[cur], cur, true);
   }
 
   // ------------------------------------------------------------
