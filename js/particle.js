@@ -1,8 +1,11 @@
 /* ============================================================
    K-02 能量核心粒子特效
    ------------------------------------------------------------
-   悬停满 2s：art 画面碎成小颗粒 → 爆散 → 汇聚成密集的六边形
-   能量核心点阵（中心嵌 β 字样）。移开复原，可反复触发。
+   随扫描线分两遍推进，避免"整屏瞬间炸开"的突兀：
+     第一遍扫描：自上而下把画面逐行粒子化（扫到哪碎到哪）；
+     第二遍扫描：自上而下把颗粒逐行汇聚成密集六边形能量核心
+       （中心嵌 β 字样）。每遍 1.4s，扫描线由 canvas 自绘以与
+       粒子严格同步。移开复原，可反复触发。
 
    技术要点：浏览器无法直接把 DOM/CSS 画面取成像素，故在离屏
    canvas 上重绘一份近似的 art 作为"粒子母体"，再 getImageData
@@ -35,11 +38,13 @@
 
     var dpr = Math.min(global.devicePixelRatio || 1, 2);
     var W = 0, H = 0;
+    var srcCanvas = null;          // 重绘的原画面，供"未扫描区"垫底显示
     var particles = [];
     var running = false;
     var raf = 0;
     var animStart = 0;
-    var T_SCATTER = 520, T_GATHER = 900;
+    // 两遍扫描，每遍时长与原 CSS 扫描线一致（1.4s），共 2.8s
+    var SWEEP_MS = 1400, TOTAL_MS = SWEEP_MS * 2;
 
     // 重绘 art 源画面并采样出粒子起点
     function buildParticles() {
@@ -54,6 +59,7 @@
       var off = document.createElement('canvas');
       off.width = W; off.height = H;
       var o = off.getContext('2d');
+      srcCanvas = off;
 
       // 青绿渐变底（呼应 data-seed="2" 的配色）
       var g = o.createLinearGradient(0, 0, W, H);
@@ -108,7 +114,7 @@
           ey: clamp(p.y + Math.sin(ang) * dist, 2, H - 2),
           tx: targets[idx].x, ty: targets[idx].y,
           size: rnd(1.1, 2.3),
-          delay: rnd(0, 110),
+          phase: rnd(0, 6.28),
           tone: idx % 6 === 0 ? '#8affe6' : (idx % 3 === 0 ? '#5fe0cf' : '#36d1c4')
         };
       });
@@ -166,33 +172,65 @@
       return pts;
     }
 
+    // 画扫描线：一条青色光带，pos 为相对 art 顶部的比例（可为负/超过 1）
+    function drawSweep(pos) {
+      var y = pos * H;
+      var band = Math.max(26, H * 0.16);
+      var grad = ctx.createLinearGradient(0, y - band, 0, y + band);
+      grad.addColorStop(0, 'rgba(54,209,196,0)');
+      grad.addColorStop(0.5, 'rgba(120,255,232,.16)');
+      grad.addColorStop(1, 'rgba(54,209,196,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, y - band, W, band * 2);
+      // 亮边
+      ctx.fillStyle = 'rgba(160,255,240,.55)';
+      ctx.fillRect(0, y, W, 1.5);
+    }
+
     function frame(ts) {
       if (!running) return;
       var el = ts - animStart;
       ctx.clearRect(0, 0, W, H);
+
+      var done = el >= TOTAL_MS;
+      var pass = el < SWEEP_MS ? 0 : 1;
+      var local = done ? 1 : (pass === 0 ? el : el - SWEEP_MS) / SWEEP_MS;
+      if (local > 1) local = 1;
+      var scanPos = -0.1 + local * 1.2;         // 扫描线：顶部 -10% → 110%
+      var ROWS = 0.26;                           // 扫描线扫过后，这一行带内完成动作
+
+      // 第一遍：扫描线以下是"未扫描区"，垫完整原画面；扫过之处才碎成粒子
+      if (pass === 0 && !done && srcCanvas) {
+        var cutY = clamp(scanPos, 0, 1) * H;
+        if (cutY < H) ctx.drawImage(srcCanvas, 0, cutY, W, H - cutY, 0, cutY, W, H - cutY);
+      }
+
       for (var i = 0; i < particles.length; i++) {
         var p = particles[i];
-        var t = el - p.delay;
-        var x, y, alpha = 1;
-        if (t < 0) {
-          x = p.sx; y = p.sy;
-        } else if (t < T_SCATTER) {
-          var k = easeOut(t / T_SCATTER);
-          x = p.sx + (p.ex - p.sx) * k;
-          y = p.sy + (p.ey - p.sy) * k;
-        } else if (t < T_SCATTER + T_GATHER) {
-          var k2 = easeInOut((t - T_SCATTER) / T_GATHER);
-          x = p.ex + (p.tx - p.ex) * k2;
-          y = p.ey + (p.ty - p.ey) * k2;
-        } else {
+        var x, y;
+        if (done) {
+          // 两遍结束：核心成型，轻微呼吸维持活性
           x = p.tx; y = p.ty;
-          // 汇聚完成后轻微呼吸，维持"能量核心"的活性
-          alpha = 0.82 + 0.18 * Math.sin(ts / 320 + i * 0.7);
+        } else if (pass === 0) {
+          var rowA = p.sy / H;
+          if (rowA > scanPos) continue;          // 未扫到：交给原图显示，不画散点
+          var e = easeOut(clamp((scanPos - rowA) / ROWS, 0, 1));
+          x = p.sx + (p.ex - p.sx) * e;
+          y = p.sy + (p.ey - p.sy) * e;
+        } else {
+          var rowB = p.ey / H;
+          var g = easeInOut(clamp((scanPos - rowB) / ROWS, 0, 1));
+          x = p.ex + (p.tx - p.ex) * g;
+          y = p.ey + (p.ty - p.ey) * g;
         }
+        var alpha = done ? (0.82 + 0.18 * Math.sin(ts / 320 + p.phase)) : 1;
         ctx.globalAlpha = alpha;
         ctx.fillStyle = p.tone;
         ctx.fillRect(x - p.size / 2, y - p.size / 2, p.size, p.size);
       }
+
+      // 扫描期间把扫描线画在最上层，强化"扫一遍进一步"的节奏
+      if (!done) drawSweep(scanPos);
       ctx.globalAlpha = 1;
       raf = requestAnimationFrame(frame);
     }
