@@ -7,8 +7,9 @@
      ② 停留：整幅是粒子化的 K-02，背景虚化、粒子轻微呼吸；
      ③ 第二遍扫过：粒子自上而下逐行被打乱（散开）再汇聚到中心，
         拼成密集六边形能量核心（中心嵌 β 字样）。
-   扫描线由 canvas 自绘（黄色，与 CSS .card__scan 同色系），与粒子
-   严格同步——单一时钟，避免"两条线假装同步"。移开复原，可反复触发。
+   扫描线是 K-02 专属的真实 DOM 元素（.card__scan--solo），由 JS 逐帧
+   驱动其位置，粒子直接读这条线的实际位置来动作——线在哪，就处理到哪，
+   "扫过"成为可判定的真实事件，而非计时器估算。移开复原，可反复触发。
 
    技术要点：浏览器无法直接把 DOM/CSS 画面取成像素，故在离屏
    canvas 上重绘一份近似的 art 作为"粒子母体"，再 getImageData
@@ -31,6 +32,9 @@
     // reduced-motion 下不启用粒子：返回空实现，走静态画面
     var reduce = !!(global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)').matches);
     if (reduce) return { play: function () {}, reset: function () {}, resize: function () {} };
+
+    // K-02 专属扫描线（真实 DOM）：作为节拍器，位置即"扫到哪"的真相源
+    var soloScan = art.querySelector('.card__scan--solo');
 
     var canvas = document.createElement('canvas');
     canvas.className = 'card__particles';
@@ -187,18 +191,21 @@
       return pts;
     }
 
-    // 画黄色扫描线（与 CSS .card__scan 的橙黄同色系），pos 为相对 art 顶部比例
-    function drawSweep(pos) {
-      var y = pos * H;
-      var band = Math.max(26, H * 0.16);
-      var grad = ctx.createLinearGradient(0, y - band, 0, y + band);
-      grad.addColorStop(0, 'rgba(245,166,35,0)');
-      grad.addColorStop(0.5, 'rgba(245,166,35,.30)');
-      grad.addColorStop(1, 'rgba(245,166,35,0)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, y - band, W, band * 2);
-      ctx.fillStyle = 'rgba(255,205,120,.72)';
-      ctx.fillRect(0, y, W, 1.5);
+    // 移动 K-02 专属扫描线到指定比例位置（pos: -0.1 → 1.1，可为画外）。
+    // 用 transform 定位，避免触发布局；线的实际渲染位置由 readScan() 读回。
+    function moveScan(pos) {
+      if (!soloScan) return;
+      soloScan.style.transform = 'translate3d(0,' + (pos * H) + 'px,0)';
+    }
+
+    // 读取扫描线相对 art 的真实位置（0→1）。粒子据此判定"扫到哪"，
+    // 因此节拍的真相源就是这条可见的 DOM 线，而非计时器的估算值。
+    function readScan() {
+      if (!soloScan) return -1;
+      var a = art.getBoundingClientRect();
+      var s = soloScan.getBoundingClientRect();
+      if (!a.height) return -1;
+      return (s.top + s.height / 2 - a.top) / a.height;
     }
 
     // 虚化底图：只把纯背景（无 K-02 字样）模糊压暗，让字样完全由粒子构成
@@ -227,6 +234,17 @@
         stage = 1;
       } else if (!done) {
         stage = 2; local = (el - T2_START) / SWEEP_MS; scanPos = -0.1 + local * 1.2;
+      }
+
+      // 把目标位置写给了条可见的专属扫描线，再读回它的真实位置作为节拍真相源：
+      // 线扫到哪，粒子和背景就处理到哪——"扫过 K-02"成为可判定的真实事件。
+      moveScan(scanPos);
+      if (stage === 0 || stage === 2) {
+        var real = readScan();
+        if (real >= -0.5) {
+          scanPos = real;                       // 读回真实位置（0→1）
+          local = clamp((real + 0.1) / 1.2, 0, 1);
+        }
       }
 
       // ---------- 背景层 ----------
@@ -293,9 +311,6 @@
         ctx.fillRect(x - p.size / 2, y - p.size / 2, p.size, p.size);
       }
 
-      // ---------- 黄色扫描线（仅两遍扫描期间，画在最上层）----------
-      if ((stage === 0 || stage === 2) && !done) drawSweep(scanPos);
-
       ctx.globalAlpha = 1;
       raf = requestAnimationFrame(frame);
     }
@@ -306,6 +321,7 @@
       running = true;
       art.classList.add('is-shattered');
       cancelAnimationFrame(raf);
+      moveScan(-0.1);                  // 专属线归到顶部，第一遍从这里开始扫
       animStart = performance.now();
       raf = requestAnimationFrame(frame);
     }
@@ -315,6 +331,7 @@
       cancelAnimationFrame(raf);
       raf = 0;
       ctx.clearRect(0, 0, W, H);
+      moveScan(-0.1);
       art.classList.remove('is-shattered');
     }
 

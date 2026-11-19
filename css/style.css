@@ -385,6 +385,16 @@ body.loaded .hero__title-en .ch { animation: charIn .7s cubic-bezier(.2,.8,.2,1)
 .card--core.core-active .card__art .card__scan,
 .card--core.core-active .card__art::before,
 .card--core.core-active .card__art::after { opacity: 0 !important; }
+/* K-02 专属扫描线：真实 DOM 元素，由 JS 逐帧驱动位置，粒子严格跟随它。
+   与公共 card__scan 的区别：公共线 hover 时无限循环、仅装饰；专属线只在
+   粒子动画期间出现，扫过的位置就是"扫到哪、粒子化/汇聚到哪"的真实判定。 */
+.card__scan--solo {
+  position: absolute; left: 0; right: 0; top: 0; height: 2px; z-index: 4;
+  opacity: 0; pointer-events: none; will-change: transform;
+  background: linear-gradient(90deg, transparent, rgba(255,205,120,.9) 18%, rgba(255,215,140,1) 50%, rgba(255,205,120,.9) 82%, transparent);
+  box-shadow: 0 0 10px 1px rgba(245,166,35,.6), 0 0 22px 5px rgba(245,166,35,.22);
+}
+.card--core.core-active .card__art .card__scan--solo { opacity: 1; }
 /* K-02 走粒子路径时不虚化正面：让能量核心清晰可见 */
 .card--core.core-active .card__front { filter: none; opacity: 1; transform: none; }
 /* 背景微光，衬托粒子核心 */
