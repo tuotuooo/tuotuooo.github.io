@@ -1,11 +1,14 @@
 /* ============================================================
-   K-02 能量核心粒子特效
+   K-02 能量核心粒子特效（黄色扫描线驱动）
    ------------------------------------------------------------
-   随扫描线分两遍推进，避免"整屏瞬间炸开"的突兀：
-     第一遍扫描：自上而下把画面逐行粒子化（扫到哪碎到哪）；
-     第二遍扫描：自上而下把颗粒逐行汇聚成密集六边形能量核心
-       （中心嵌 β 字样）。每遍 1.4s，扫描线由 canvas 自绘以与
-       粒子严格同步。移开复原，可反复触发。
+   以一条黄色扫描线扫过卡片的次数为节拍，分三幕推进：
+     ① 第一遍扫过：画面自上而下逐行粒子化，粒子停在原位仍组成
+        K-02 字样，已扫区背景随之虚化（未扫区保持清晰原图）；
+     ② 停留：整幅是粒子化的 K-02，背景虚化、粒子轻微呼吸；
+     ③ 第二遍扫过：粒子自上而下逐行被打乱（散开）再汇聚到中心，
+        拼成密集六边形能量核心（中心嵌 β 字样）。
+   扫描线由 canvas 自绘（黄色，与 CSS .card__scan 同色系），与粒子
+   严格同步——单一时钟，避免"两条线假装同步"。移开复原，可反复触发。
 
    技术要点：浏览器无法直接把 DOM/CSS 画面取成像素，故在离屏
    canvas 上重绘一份近似的 art 作为"粒子母体"，再 getImageData
@@ -38,13 +41,18 @@
 
     var dpr = Math.min(global.devicePixelRatio || 1, 2);
     var W = 0, H = 0;
-    var srcCanvas = null;          // 重绘的原画面，供"未扫描区"垫底显示
+    var srcCanvas = null;          // 完整原画面（含 K-02 字样），供第一遍未扫区清晰垫底
+    var bgCanvas = null;           // 仅背景（渐变+网格，无字样），供虚化垫底——让字样只由粒子构成
     var particles = [];
     var running = false;
     var raf = 0;
     var animStart = 0;
-    // 两遍扫描，每遍时长与原 CSS 扫描线一致（1.4s），共 2.8s
-    var SWEEP_MS = 1400, TOTAL_MS = SWEEP_MS * 2;
+
+    // 时序：第一遍扫描 → 停留 → 第二遍扫描
+    var SWEEP_MS = 1400, HOLD_MS = 700;
+    var T1_END = SWEEP_MS;                 // 第一遍结束
+    var T2_START = SWEEP_MS + HOLD_MS;     // 第二遍开始
+    var TOTAL_MS = T2_START + SWEEP_MS;    // 全部结束
 
     // 重绘 art 源画面并采样出粒子起点
     function buildParticles() {
@@ -77,6 +85,11 @@
         for (var gx = 8; gx < W; gx += 10) o.fillRect(gx, gy, 1, 1);
       }
 
+      // 先存一份"纯背景"（无字样）——虚化垫底用，避免字样以实心虚影重复出现
+      bgCanvas = document.createElement('canvas');
+      bgCanvas.width = W; bgCanvas.height = H;
+      bgCanvas.getContext('2d').drawImage(off, 0, 0);
+
       // 编号字样（粒子主体来自这里）
       o.fillStyle = 'rgba(255,255,255,.94)';
       o.font = '900 ' + Math.round(H * 0.3) + 'px Orbitron, Rajdhani, sans-serif';
@@ -92,8 +105,9 @@
           var R = img[i], G = img[i + 1], B = img[i + 2], A = img[i + 3];
           if (A < 20) continue;
           var lum = R + G + B;
-          // 亮部（字样/高光）必取，底色按概率取，形成"整块画面碎裂"的观感
-          if (lum > 190 || Math.random() < 0.32) src.push({ x: x, y: y });
+          // 字样笔画（亮部）高密度采样以保住 "K-02" 轮廓；底色只稀疏点缀，
+          // 这样粒子化后仍清楚看得出是 K-02，而不是一片均匀噪点。
+          if (lum > 190 || Math.random() < 0.10) src.push({ x: x, y: y });
         }
       }
       // 粒子上限：移动端 520，桌面 900
@@ -106,8 +120,9 @@
 
       var targets = coreTargets(src.length);
       particles = src.map(function (p, idx) {
-        var ang = Math.atan2(p.y - H / 2, p.x - W / 2) + rnd(-0.55, 0.55);
-        var dist = rnd(26, 88);
+        // ex/ey = 第二遍"打乱"的散开位置（相对卡片中心的大范围随机）
+        var ang = Math.atan2(p.y - H / 2, p.x - W / 2) + rnd(-1.2, 1.2);
+        var dist = rnd(30, Math.min(W, H) * 0.52);
         return {
           sx: p.x, sy: p.y,
           ex: clamp(p.x + Math.cos(ang) * dist, 2, W - 2),
@@ -172,19 +187,29 @@
       return pts;
     }
 
-    // 画扫描线：一条青色光带，pos 为相对 art 顶部的比例（可为负/超过 1）
+    // 画黄色扫描线（与 CSS .card__scan 的橙黄同色系），pos 为相对 art 顶部比例
     function drawSweep(pos) {
       var y = pos * H;
       var band = Math.max(26, H * 0.16);
       var grad = ctx.createLinearGradient(0, y - band, 0, y + band);
-      grad.addColorStop(0, 'rgba(54,209,196,0)');
-      grad.addColorStop(0.5, 'rgba(120,255,232,.16)');
-      grad.addColorStop(1, 'rgba(54,209,196,0)');
+      grad.addColorStop(0, 'rgba(245,166,35,0)');
+      grad.addColorStop(0.5, 'rgba(245,166,35,.30)');
+      grad.addColorStop(1, 'rgba(245,166,35,0)');
       ctx.fillStyle = grad;
       ctx.fillRect(0, y - band, W, band * 2);
-      // 亮边
-      ctx.fillStyle = 'rgba(160,255,240,.55)';
+      ctx.fillStyle = 'rgba(255,205,120,.72)';
       ctx.fillRect(0, y, W, 1.5);
+    }
+
+    // 虚化底图：只把纯背景（无 K-02 字样）模糊压暗，让字样完全由粒子构成
+    function drawBlurBackdrop(alpha) {
+      if (!bgCanvas || alpha <= 0) return;
+      var blur = Math.max(3, Math.round(H * 0.018));
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.filter = 'blur(' + blur + 'px) brightness(.72)';
+      ctx.drawImage(bgCanvas, 0, 0, W, H);
+      ctx.restore();
     }
 
     function frame(ts) {
@@ -192,45 +217,85 @@
       var el = ts - animStart;
       ctx.clearRect(0, 0, W, H);
 
+      var ROWS = 0.28;                       // 扫描线扫过后，这一"行带"内完成动作
       var done = el >= TOTAL_MS;
-      var pass = el < SWEEP_MS ? 0 : 1;
-      var local = done ? 1 : (pass === 0 ? el : el - SWEEP_MS) / SWEEP_MS;
-      if (local > 1) local = 1;
-      var scanPos = -0.1 + local * 1.2;         // 扫描线：顶部 -10% → 110%
-      var ROWS = 0.26;                           // 扫描线扫过后，这一行带内完成动作
+      var stage = 3, local = 1, scanPos = 1.2;   // stage 0=第一遍 1=停留 2=第二遍 3=完成
 
-      // 第一遍：扫描线以下是"未扫描区"，垫完整原画面；扫过之处才碎成粒子
-      if (pass === 0 && !done && srcCanvas) {
-        var cutY = clamp(scanPos, 0, 1) * H;
-        if (cutY < H) ctx.drawImage(srcCanvas, 0, cutY, W, H - cutY, 0, cutY, W, H - cutY);
+      if (el < T1_END) {
+        stage = 0; local = el / SWEEP_MS; scanPos = -0.1 + local * 1.2;
+      } else if (el < T2_START) {
+        stage = 1;
+      } else if (!done) {
+        stage = 2; local = (el - T2_START) / SWEEP_MS; scanPos = -0.1 + local * 1.2;
       }
 
+      // ---------- 背景层 ----------
+      var cutY = clamp(scanPos, 0, 1) * H;
+      if (stage === 0) {
+        // 第一遍：已扫区虚化底；未扫区仍是清晰原图（扫到哪虚到哪）
+        if (cutY > 0) {
+          ctx.save();
+          ctx.beginPath(); ctx.rect(0, 0, W, cutY); ctx.clip();
+          drawBlurBackdrop(0.92);
+          ctx.restore();
+        }
+        if (cutY < H) ctx.drawImage(srcCanvas, 0, cutY, W, H - cutY, 0, cutY, W, H - cutY);
+      } else if (stage === 1) {
+        // 停留：整幅虚化背景
+        drawBlurBackdrop(0.92);
+      } else if (stage === 2) {
+        // 第二遍：虚化背景随扫描渐隐，让核心从暗底浮出
+        drawBlurBackdrop(clamp(1 - local * 1.05, 0, 1) * 0.92);
+      }
+      // done：不画底，露出 core-active 的深色背景
+
+      // ---------- 粒子层 ----------
       for (var i = 0; i < particles.length; i++) {
         var p = particles[i];
-        var x, y;
-        if (done) {
-          // 两遍结束：核心成型，轻微呼吸维持活性
-          x = p.tx; y = p.ty;
-        } else if (pass === 0) {
-          var rowA = p.sy / H;
-          if (rowA > scanPos) continue;          // 未扫到：交给原图显示，不画散点
-          var e = easeOut(clamp((scanPos - rowA) / ROWS, 0, 1));
-          x = p.sx + (p.ex - p.sx) * e;
-          y = p.sy + (p.ey - p.sy) * e;
+        var x, y, alpha = 1;
+        var row = p.sy / H;
+
+        if (stage === 0) {
+          // 第一遍：扫到哪，粒子停在哪（sx,sy）——仍组成 K-02 形状
+          if (row > scanPos) continue;
+          alpha = easeOut(clamp((scanPos - row) / ROWS, 0, 1));
+          x = p.sx; y = p.sy;
+        } else if (stage === 1) {
+          // 停留：粒子 K-02 轻微呼吸
+          x = p.sx; y = p.sy;
+          alpha = 0.86 + 0.14 * Math.sin(ts / 420 + p.phase);
+        } else if (stage === 2) {
+          // 第二遍：扫到哪，该行粒子先被打乱（散开）再汇聚到中心
+          if (row > scanPos) {
+            x = p.sx; y = p.sy; alpha = 0.9;   // 未扫到：仍是 K-02 粒子
+          } else {
+            var k = clamp((scanPos - row) / ROWS, 0, 1);
+            var mx, my;
+            if (k < 0.42) {
+              var s = easeOut(k / 0.42);
+              mx = p.sx + (p.ex - p.sx) * s;
+              my = p.sy + (p.ey - p.sy) * s;
+            } else {
+              var g = easeInOut((k - 0.42) / 0.58);
+              mx = p.ex + (p.tx - p.ex) * g;
+              my = p.ey + (p.ty - p.ey) * g;
+            }
+            x = mx; y = my;
+          }
         } else {
-          var rowB = p.ey / H;
-          var g = easeInOut(clamp((scanPos - rowB) / ROWS, 0, 1));
-          x = p.ex + (p.tx - p.ex) * g;
-          y = p.ey + (p.ty - p.ey) * g;
+          // done：核心成型，轻微呼吸维持活性
+          x = p.tx; y = p.ty;
+          alpha = 0.82 + 0.18 * Math.sin(ts / 320 + p.phase);
         }
-        var alpha = done ? (0.82 + 0.18 * Math.sin(ts / 320 + p.phase)) : 1;
+
         ctx.globalAlpha = alpha;
         ctx.fillStyle = p.tone;
         ctx.fillRect(x - p.size / 2, y - p.size / 2, p.size, p.size);
       }
 
-      // 扫描期间把扫描线画在最上层，强化"扫一遍进一步"的节奏
-      if (!done) drawSweep(scanPos);
+      // ---------- 黄色扫描线（仅两遍扫描期间，画在最上层）----------
+      if ((stage === 0 || stage === 2) && !done) drawSweep(scanPos);
+
       ctx.globalAlpha = 1;
       raf = requestAnimationFrame(frame);
     }
