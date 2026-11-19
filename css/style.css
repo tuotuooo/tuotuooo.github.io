@@ -374,6 +374,23 @@ body.loaded .hero__title-en .ch { animation: charIn .7s cubic-bezier(.2,.8,.2,1)
 .card__art[data-seed="4"] { background: radial-gradient(120% 120% at 30% 70%, rgba(255,120,90,.32), transparent 55%), linear-gradient(135deg, #2a1410 0%, #0a0f17 100%); }
 .card__art[data-seed="5"] { background: radial-gradient(120% 120% at 80% 60%, rgba(200,160,255,.3), transparent 55%), linear-gradient(135deg, #1e1430 0%, #0a0f17 100%); }
 .card__art[data-seed="6"] { background: radial-gradient(120% 120% at 50% 20%, rgba(120,210,255,.3), transparent 55%), linear-gradient(135deg, #0e2433 0%, #0a0f17 100%); }
+/* K-02 能量核心：canvas 粒子层叠在 art 之上，粉碎时淡出静态画面元素 */
+.card__particles {
+  position: absolute; inset: 0; z-index: 3; width: 100%; height: 100%;
+  pointer-events: none; opacity: 0; transition: opacity .28s ease;
+}
+.card--core.core-active .card__art .card__particles { opacity: 1; }
+/* 粒子接管的瞬间，隐藏编号、扫描线与网格装饰，避免与新画面重叠 */
+.card--core.core-active .card__art .card__code,
+.card--core.core-active .card__art .card__scan,
+.card--core.core-active .card__art::before,
+.card--core.core-active .card__art::after { opacity: 0 !important; }
+/* K-02 走粒子路径时不虚化正面：让能量核心清晰可见 */
+.card--core.core-active .card__front { filter: none; opacity: 1; transform: none; }
+/* 背景微光，衬托粒子核心 */
+.card--core.core-active .card__art {
+  background: radial-gradient(120% 120% at 50% 50%, rgba(54,209,196,.14), transparent 62%), #07110f;
+}
 .card__code {
   position: relative; z-index: 1; font-family: var(--font-en); font-weight: 900;
   font-size: 30px; letter-spacing: 2px; color: rgba(255,255,255,.85);

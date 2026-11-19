@@ -311,26 +311,56 @@
   // ------------------------------------------------------------
   // 10. 干员卡：悬停满 2s 浮出详情（触屏点击切换）
   //     定时器统一挂在当前卡片上，避免多张卡互相残留。
+  //     K-02（data-seed="2"）改用粒子特效：画面粉碎后汇聚成能量核心。
+  //     该卡走独立 reveal 路径，不再叠加通用的虚化/毛玻璃。
   // ------------------------------------------------------------
   (function cardReveal() {
     var canHover = mq('(hover: hover)').matches;
     document.querySelectorAll('#operators .card').forEach(function (card) {
+      var art = card.querySelector('.card__art');
+      var isK02 = art && art.getAttribute('data-seed') === '2';
+      var shatter = isK02 && window.K02CoreShatter ? window.K02CoreShatter(card) : null;
+
+      // 触屏 / reduced-motion 下没有真正的粒子动画，退回通用的 revealed 揭示
+      var useShatter = !!(shatter && canHover && !reduceMotion);
+      if (useShatter) card.classList.add('card--core');
+
+      function show() {
+        if (useShatter) { card.classList.add('core-active'); shatter.play(); }
+        else card.classList.add('revealed');
+      }
+      function hide() {
+        if (useShatter) { shatter.reset(); card.classList.remove('core-active'); }
+        card.classList.remove('revealed');
+      }
+
       if (canHover) {
         var timer = null;
         card.addEventListener('mouseenter', function () {
           clearTimeout(timer);
-          timer = setTimeout(function () { card.classList.add('revealed'); }, 2000);
+          timer = setTimeout(show, 2000);
         });
         card.addEventListener('mouseleave', function () {
           clearTimeout(timer);
-          card.classList.remove('revealed');
+          hide();
         });
       } else {
         card.setAttribute('tabindex', '0');
-        card.addEventListener('click', function () { card.classList.toggle('revealed'); });
+        var toggled = false;
+        card.addEventListener('click', function () { toggled = !toggled; toggled ? show() : hide(); });
         card.addEventListener('keydown', function (e) {
-          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.classList.toggle('revealed'); }
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggled = !toggled; toggled ? show() : hide(); }
         });
+      }
+
+      // 卡片尺寸变化（响应式断点）时重建粒子坐标
+      if (useShatter) {
+        var rzTimer = null;
+        window.addEventListener('resize', function () {
+          if (!card.classList.contains('core-active')) return;
+          clearTimeout(rzTimer);
+          rzTimer = setTimeout(function () { shatter.resize(); }, 180);
+        }, { passive: true });
       }
     });
   })();
