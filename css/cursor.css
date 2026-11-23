@@ -1,0 +1,46 @@
+/* ============================================================
+   Custom Cursor — 全站自定义鼠标光标（双圆点惯性拖随）
+   仅在精确悬停设备 + 非 reduced-motion 下启用；触摸设备保留原生光标。
+   独立模块，不依赖 style.css 的具体结构。
+   ============================================================ */
+
+.cursor {
+  position: fixed; top: 0; left: 0;
+  pointer-events: none; z-index: 9999;
+  display: none; will-change: transform;
+}
+html.has-custom-cursor .cursor { display: block; }
+html.has-custom-cursor,
+html.has-custom-cursor * { cursor: none !important; }
+
+/* 外围细环：暖金主色，跟随慢、带惯性形变 */
+.cursor-ring {
+  width: 26px; height: 26px; margin: -13px 0 0 -13px;
+  border: 1px solid var(--accent, #f5a623);
+  border-radius: 50%;
+  opacity: .85;
+  box-shadow: 0 0 18px rgba(245, 166, 35, .18), inset 0 0 12px rgba(245, 166, 35, .06);
+  transition: background-color .25s ease, border-color .25s ease, opacity .25s ease;
+}
+/* 中心实心小点：暖金，紧跟 */
+.cursor-dot {
+  width: 4px; height: 4px; margin: -2px 0 0 -2px;
+  background: var(--accent, #f5a623);
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(245, 166, 35, .9);
+  transition: background-color .2s ease, box-shadow .2s ease;
+}
+/* 悬停可交互元素：环放大填充、点变白 */
+html.cursor-hover .cursor-ring {
+  background: rgba(245, 166, 35, .28);
+  border-color: var(--accent, #f5a623);
+  opacity: 1;
+}
+html.cursor-hover .cursor-dot {
+  background: #fff;
+  box-shadow: 0 0 12px #fff;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .cursor { display: none !important; }
+}

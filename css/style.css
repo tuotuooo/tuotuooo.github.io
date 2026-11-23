@@ -389,18 +389,79 @@ body.loaded .hero__title-en .ch { animation: charIn .7s cubic-bezier(.2,.8,.2,1)
    与公共 card__scan 的区别：公共线 hover 时无限循环、仅装饰；专属线只在
    粒子动画期间出现，扫过的位置就是"扫到哪、粒子化/汇聚到哪"的真实判定。 */
 .card__scan--solo {
-  position: absolute; left: 0; right: 0; top: 0; height: 2px; z-index: 4;
-  opacity: 0; pointer-events: none; will-change: transform;
-  background: linear-gradient(90deg, transparent, rgba(255,205,120,.9) 18%, rgba(255,215,140,1) 50%, rgba(255,205,120,.9) 82%, transparent);
-  box-shadow: 0 0 10px 1px rgba(245,166,35,.6), 0 0 22px 5px rgba(245,166,35,.22);
+  position: absolute; left: 0; right: 0; top: 0; height: 1.5px; z-index: 4;
+  opacity: 0; pointer-events: none; will-change: transform, opacity;
+  /* 暖金主线 + 两侧青绿拖尾：与粒子同色系呼应，减轻冷暖撞色 */
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(86,224,208,.35) 12%,
+    rgba(255,220,150,.92) 50%,
+    rgba(86,224,208,.35) 88%,
+    transparent);
+  box-shadow: 0 0 8px rgba(255,214,140,.38), 0 0 18px 3px rgba(86,224,208,.16);
 }
-.card--core.core-active .card__art .card__scan--solo { opacity: 1; }
+/* 显隐完全由 JS 按扫描进度控制（两端淡入淡出），这里不再强制常亮 */
+/* 重置版 K-02：扫描特效改由 canvas 绘制，两条 DOM 黄线在工作模式下都要隐藏。
+   - solo 线：旧粒子版专用；
+   - 公共 .card__scan：hover 就循环播放的橙黄装饰线，此前只在 core-active 后
+     才被压掉，导致“悬停→动画触发”约 2 秒窗口里黄线仍扫过——这里从一开始
+     就彻底隐藏（display:none 优先级高于 :hover 的 opacity/animation）。
+   legacy 模式（?k02fx=legacy）无 k02fx-reset 标记，两条黄线都保留供对比。 */
+body.k02fx-reset .card--core .card__art .card__scan--solo,
+body.k02fx-reset .card--core .card__art .card__scan { display: none; }
+/* 重置版 K-02：默认即粒子态——粒子层常驻可见，静态字样退场（改由粒子拼成）。
+   hover 前后都是同一批粒子，只是形变，故透明度恒定，不再随 core-active 切换。 */
+body.k02fx-reset .card--core .card__art .card__particles { opacity: 1 !important; }
+body.k02fx-reset .card--core .card__art .card__code { opacity: 0 !important; }
+body.k02fx-reset .card--core .card__art::before,
+body.k02fx-reset .card--core .card__art::after { opacity: .25; }
+/* 暗背景衬托青绿粒子（常态即生效，不再等 core-active） */
+body.k02fx-reset .card--core .card__art {
+  background: radial-gradient(120% 120% at 50% 50%, rgba(54,209,196,.12), transparent 62%), #07110f;
+}
+/* 重置版 K-02：连 hover 边框高亮也统一到青绿，避免出现第二处橙黄"黄线"；
+   全局 .card:hover 的橙黄 accent 只作用于其他卡片与 legacy 模式。 */
+body.k02fx-reset .card--core:hover {
+  border-color: rgba(86, 224, 208, .85);
+  box-shadow: 0 18px 40px rgba(0,0,0,.5), 0 0 0 1px rgba(86, 224, 208, .18);
+}
 /* K-02 走粒子路径时不虚化正面：让能量核心清晰可见 */
 .card--core.core-active .card__front { filter: none; opacity: 1; transform: none; }
 /* 背景微光，衬托粒子核心 */
 .card--core.core-active .card__art {
   background: radial-gradient(120% 120% at 50% 50%, rgba(54,209,196,.14), transparent 62%), #07110f;
 }
+
+/* ============================================================
+   K-03~06 独立专属粒子特效（card-fx）
+   默认即粒子态、悬停汇聚专属图案；每张卡独立主题色，互不重复。
+   K-01 不带 card--core，保持原本的悬停揭示效果。
+   ============================================================ */
+/* 两条 DOM 黄线在新特效卡下一开始就隐藏，不参与 */
+body.cardfx-on .card--core .card__art .card__scan,
+body.cardfx-on .card--core .card__art .card__scan--solo { display: none; }
+/* 粒子层常驻可见，静态字样退场 */
+body.cardfx-on .card--core .card__art .card__particles { opacity: 1 !important; }
+body.cardfx-on .card--core .card__art .card__code { opacity: 0 !important; }
+body.cardfx-on .card--core .card__art::before,
+body.cardfx-on .card--core .card__art::after { opacity: .22; }
+/* 每张卡独立暗背景 + 主题色辉光；hover 边框同色，避免全局橙黄 */
+body.cardfx-on .card--core .card__art[data-seed="3"] {
+  background: radial-gradient(120% 120% at 50% 50%, rgba(92,230,168,.13), transparent 62%), #071410;
+}
+body.cardfx-on .card--core .card__art[data-seed="4"] {
+  background: radial-gradient(120% 120% at 50% 50%, rgba(255,118,86,.13), transparent 62%), #160b09;
+}
+body.cardfx-on .card--core .card__art[data-seed="5"] {
+  background: radial-gradient(120% 120% at 50% 50%, rgba(122,168,255,.13), transparent 62%), #0a0d1a;
+}
+body.cardfx-on .card--core .card__art[data-seed="6"] {
+  background: radial-gradient(120% 120% at 50% 50%, rgba(240,178,74,.13), transparent 62%), #16110a;
+}
+body.cardfx-on .card--core[data-seed="3"]:hover { border-color: rgba(92,230,168,.85); box-shadow: 0 18px 40px rgba(0,0,0,.5), 0 0 0 1px rgba(92,230,168,.18); }
+body.cardfx-on .card--core[data-seed="4"]:hover { border-color: rgba(255,118,86,.85); box-shadow: 0 18px 40px rgba(0,0,0,.5), 0 0 0 1px rgba(255,118,86,.18); }
+body.cardfx-on .card--core[data-seed="5"]:hover { border-color: rgba(122,168,255,.85); box-shadow: 0 18px 40px rgba(0,0,0,.5), 0 0 0 1px rgba(122,168,255,.18); }
+body.cardfx-on .card--core[data-seed="6"]:hover { border-color: rgba(240,178,74,.85); box-shadow: 0 18px 40px rgba(0,0,0,.5), 0 0 0 1px rgba(240,178,74,.18); }
 .card__code {
   position: relative; z-index: 1; font-family: var(--font-en); font-weight: 900;
   font-size: 30px; letter-spacing: 2px; color: rgba(255,255,255,.85);

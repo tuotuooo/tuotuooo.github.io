@@ -318,8 +318,23 @@
     var canHover = mq('(hover: hover)').matches;
     document.querySelectorAll('#operators .card').forEach(function (card) {
       var art = card.querySelector('.card__art');
-      var isK02 = art && art.getAttribute('data-seed') === '2';
-      var shatter = isK02 && window.K02CoreShatter ? window.K02CoreShatter(card) : null;
+      var seed = art ? art.getAttribute('data-seed') : null;
+      // K-01（seed=1）不参与，保持原本的悬停揭示。
+      // K-02 用独立 K02Fx（?k02fx=legacy 可切旧版）；K-03~06 各用 CardFx 的专属形态。
+      var legacyFx = /[?&]k02fx=legacy(?:&|$)/.test(location.search);
+      var shatter = null;
+      if (seed === '2') {
+        var FxCtor = (!legacyFx && window.K02Fx) ? window.K02Fx : window.K02CoreShatter;
+        if (FxCtor) shatter = FxCtor(card);
+        if (!legacyFx && window.K02Fx) document.body.classList.add('k02fx-reset');
+      } else if (window.CardFx && (seed === '3' || seed === '4' || seed === '5' || seed === '6')) {
+        shatter = window.CardFx(card);
+        if (shatter) {
+          document.body.classList.add('cardfx-on');
+          // 同步到 card 节点，供 CSS 的 [data-seed] hover 边框选择器使用
+          card.setAttribute('data-seed', seed);
+        }
+      }
 
       // 触屏 / reduced-motion 下没有真正的粒子动画，退回通用的 revealed 揭示
       var useShatter = !!(shatter && canHover && !reduceMotion);
@@ -336,9 +351,13 @@
 
       if (canHover) {
         var timer = null;
+        // K-02 粒子特效：悬停立即触发，不再等 2 秒（fx 自身有淡入，不会突兀）。
+        // 其余卡片保留原有的 2000ms 延迟，避免划过时误触发揭示。
+        var enterDelay = useShatter ? 0 : 2000;
         card.addEventListener('mouseenter', function () {
           clearTimeout(timer);
-          timer = setTimeout(show, 2000);
+          if (!enterDelay) show();
+          else timer = setTimeout(show, enterDelay);
         });
         card.addEventListener('mouseleave', function () {
           clearTimeout(timer);
